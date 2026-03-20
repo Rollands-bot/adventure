@@ -50,9 +50,10 @@ export default function AdminOrders() {
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
+      const updateData: Partial<Order> = { status };
       const { error } = await supabase
         .from("orders")
-        .update({ status })
+        .update(updateData)
         .eq("id", orderId);
 
       if (error) throw error;
@@ -71,9 +72,10 @@ export default function AdminOrders() {
     paymentStatus: PaymentStatus
   ) => {
     try {
+      const updateData: Partial<Order> = { payment_status: paymentStatus };
       const { error } = await supabase
         .from("orders")
-        .update({ payment_status: paymentStatus })
+        .update(updateData)
         .eq("id", orderId);
 
       if (error) throw error;
