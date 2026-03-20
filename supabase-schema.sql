@@ -121,6 +121,8 @@ DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 DROP POLICY IF EXISTS "Super admin can manage all profiles" ON profiles;
 DROP POLICY IF EXISTS "Enable insert for authentication" ON profiles;
+DROP POLICY IF EXISTS "Authenticated users can view profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can delete own profile" ON profiles;
 
 -- Allow authenticated users to view any profile (needed to avoid recursion)
 CREATE POLICY "Authenticated users can view profiles"
@@ -132,8 +134,9 @@ CREATE POLICY "Users can update own profile"
   ON profiles FOR UPDATE
   USING (auth.uid() = id);
 
--- Allow insert for new user creation (trigger)
-CREATE POLICY "Enable insert for authentication"
+-- Allow insert for new user creation (trigger uses SECURITY DEFINER)
+-- This policy allows the trigger function to insert new profiles
+CREATE POLICY "Enable insert for new users"
   ON profiles FOR INSERT
   WITH CHECK (true);
 
@@ -278,7 +281,21 @@ DROP TRIGGER IF EXISTS handle_orders_updated_at ON orders;
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.handle_updated_at() CASCADE;
 
+-- Grant necessary permissions
+GRANT USAGE ON SCHEMA public TO postgres;
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT USAGE ON SCHEMA public TO authenticated;
+
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
 -- Function to automatically create profile on signup
+-- Uses SECURITY DEFINER to bypass RLS during insert
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -286,13 +303,18 @@ BEGIN
   VALUES (
     NEW.id,
     NEW.email,
-    NEW.raw_user_meta_data->>'full_name',
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
     NEW.raw_user_meta_data->>'phone',
-    COALESCE(NEW.raw_user_meta_data->>'role', 'user')::user_role
+    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'user'::user_role)
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Grant execute permission on the function
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO anon;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO authenticated;
 
 -- Trigger on auth.users
 CREATE TRIGGER on_auth_user_created
