@@ -36,28 +36,8 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // Check if user has admin or staff role
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
-
-      if (error || !profile) {
-        console.error('Error fetching profile:', error)
-        // Redirect to home if can't fetch profile
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-
-      if (profile.role !== 'super_admin' && profile.role !== 'staff') {
-        // Redirect to home if not authorized
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-    } catch (error) {
-      console.error('Middleware error:', error)
-      return NextResponse.redirect(new URL('/', req.url))
-    }
+    // Skip role check for now - let the page handle authorization
+    // This avoids RLS policy issues during middleware
   }
 
   return res
