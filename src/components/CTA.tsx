@@ -32,7 +32,7 @@ const CTA = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="#produk"
+              href="/produk"
               className="btn-primary text-lg px-10 py-4 bg-brand-600 hover:bg-brand-700 text-white"
             >
               Sewa Sekarang
@@ -51,7 +51,7 @@ const CTA = () => {
               </svg>
             </Link>
             <Link
-              href="#kontak"
+              href="/kontak"
               className="btn-secondary text-lg px-10 py-4 border-white/30"
             >
               Hubungi Kami

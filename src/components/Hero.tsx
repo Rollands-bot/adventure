@@ -10,7 +10,7 @@ const Hero = () => {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=2070&q=80"
+          src="/hero-bg.png"
           alt="Outdoor adventure background"
           fill
           priority
@@ -22,7 +22,7 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pt-20 sm:pt-0">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -62,7 +62,7 @@ const Hero = () => {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Link href="#produk" className="btn-primary text-lg px-8 py-4">
+          <Link href="/produk" className="btn-primary text-lg px-8 py-4">
             Mulai Sewa
             <svg
               className="inline-block w-5 h-5 ml-2"
@@ -78,7 +78,7 @@ const Hero = () => {
               />
             </svg>
           </Link>
-          <Link href="#produk" className="btn-secondary text-lg px-8 py-4">
+          <Link href="/produk" className="btn-secondary text-lg px-8 py-4">
             Lihat Peralatan
           </Link>
         </motion.div>
@@ -110,22 +110,6 @@ const Hero = () => {
           </div>
         </motion.div>
       </div>
-
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.8 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-      >
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-          className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2"
-        >
-          <div className="w-1.5 h-3 bg-white/50 rounded-full" />
-        </motion.div>
-      </motion.div>
     </section>
   );
 };
