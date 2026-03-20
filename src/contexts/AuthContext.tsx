@@ -50,9 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       setProfile(data);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      setProfile(null);
+    } catch (error: any) {
+      // Ignore lock errors - they're usually transient
+      if (error?.message?.includes('Lock')) {
+        console.warn('Auth lock warning (can be ignored):', error.message);
+      } else {
+        console.error("Error fetching profile:", error);
+        setProfile(null);
+      }
     }
   };
 
@@ -67,8 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           await fetchProfile(session.user.id);
         }
-      } catch (error) {
-        console.error("Error getting session:", error);
+      } catch (error: any) {
+        // Ignore lock errors - they're usually transient
+        if (error?.message?.includes('Lock')) {
+          console.warn('Auth lock warning (can be ignored):', error.message);
+        } else {
+          console.error("Error getting session:", error);
+        }
       } finally {
         setInitialized(true);
         setLoading(false);

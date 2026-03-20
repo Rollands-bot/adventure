@@ -144,8 +144,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between">
+          {/* Remember Me */}
+          <div className="flex items-center">
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -155,12 +155,6 @@ export default function LoginPage() {
               />
               <span className="ml-2 text-sm text-gray-600">Ingat saya</span>
             </label>
-            <Link
-              href="/forgot-password"
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
-            >
-              Lupa password?
-            </Link>
           </div>
 
           {/* Error Message */}

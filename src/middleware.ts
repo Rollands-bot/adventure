@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
-  
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -23,15 +23,12 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // Refresh session if expired
-  await supabase.auth.getSession()
-
   // Protect admin routes
   const { pathname } = req.nextUrl
-  
+
   if (pathname.startsWith('/admin')) {
     const { data: { session } } = await supabase.auth.getSession()
-    
+
     if (!session) {
       // Redirect to login if not authenticated
       const loginUrl = new URL('/login', req.url)
@@ -40,14 +37,25 @@ export async function middleware(req: NextRequest) {
     }
 
     // Check if user has admin or staff role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
 
-    if (!profile || (profile.role !== 'super_admin' && profile.role !== 'staff')) {
-      // Redirect to home if not authorized
+      if (error || !profile) {
+        console.error('Error fetching profile:', error)
+        // Redirect to home if can't fetch profile
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+
+      if (profile.role !== 'super_admin' && profile.role !== 'staff') {
+        // Redirect to home if not authorized
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+    } catch (error) {
+      console.error('Middleware error:', error)
       return NextResponse.redirect(new URL('/', req.url))
     }
   }
