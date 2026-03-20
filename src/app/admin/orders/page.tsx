@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getSupabaseClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Order, OrderStatus, PaymentStatus } from "@/types";
 
 export default function AdminOrders() {
@@ -10,7 +10,7 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const supabase = getSupabaseClient();
+  const { supabase } = useAuth();
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
 

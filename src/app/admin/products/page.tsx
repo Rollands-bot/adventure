@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getSupabaseClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Product } from "@/types";
 import Image from "next/image";
 
@@ -11,7 +11,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const supabase = getSupabaseClient();
+  const { supabase } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",

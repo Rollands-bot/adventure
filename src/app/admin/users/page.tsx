@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getSupabaseClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { UserProfile, UserRole } from "@/types";
 
 export default function AdminUsers() {
@@ -10,7 +10,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const supabase = getSupabaseClient();
+  const { supabase } = useAuth();
 
   useEffect(() => {
     fetchUsers();

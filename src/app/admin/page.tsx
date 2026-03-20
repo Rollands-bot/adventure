@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getSupabaseClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { DashboardStats } from "@/types";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = getSupabaseClient();
+  const { supabase } = useAuth();
 
   useEffect(() => {
     fetchStats();
