@@ -356,8 +356,11 @@ CREATE POLICY "Staff can manage categories"
     )
   );
 
--- Trigger for categories updated_at (already created in FUNCTIONS & TRIGGERS section)
--- No need to create again here
+-- Trigger for categories updated_at
+CREATE TRIGGER handle_categories_updated_at
+  BEFORE UPDATE ON categories
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
 
 -- ============================================
 -- STORAGE BUCKETS (for product images & payment proofs)
@@ -376,6 +379,12 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================
 -- STORAGE RLS POLICIES - PRODUCTS BUCKET
 -- ============================================
+
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Public Read Access" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Upload Access" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Update Access" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Delete Access" ON storage.objects;
 
 -- Allow public read access for product images
 CREATE POLICY "Public Read Access"
@@ -410,13 +419,17 @@ CREATE POLICY "Authenticated Delete Access"
 -- STORAGE RLS POLICIES - PAYMENT PROOFS BUCKET
 -- ============================================
 
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Public Read Access Payment Proofs" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Upload Access Payment Proofs" ON storage.objects;
+
 -- Allow public read access for payment proofs (admin view)
-CREATE POLICY "Public Read Access"
+CREATE POLICY "Public Read Access Payment Proofs"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'payment-proofs');
 
 -- Allow authenticated users to upload payment proofs
-CREATE POLICY "Authenticated Upload Access"
+CREATE POLICY "Authenticated Upload Access Payment Proofs"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'payment-proofs' 
