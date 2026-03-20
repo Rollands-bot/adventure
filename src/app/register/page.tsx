@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthCard from "@/components/AuthCard";
+import Navbar from "@/components/Navbar";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -76,7 +77,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="flex items-center justify-center px-4 pt-24 pb-12">
       <AuthCard
         title="Buat Akun Baru"
         subtitle="Mulai petualangan Anda bersama kami"
@@ -270,6 +273,7 @@ export default function RegisterPage() {
           </button>
         </form>
       </AuthCard>
+      </div>
     </div>
   );
 }

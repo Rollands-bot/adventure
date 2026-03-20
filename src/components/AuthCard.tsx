@@ -47,12 +47,24 @@ const AuthCard = ({
             {footerLinkText}
           </Link>
         </p>
-      </div>
 
-      {/* Copyright */}
-      <p className="text-center text-gray-500 text-xs mt-8">
-        © 2024 Ruang Aktif Adventure
-      </p>
+        {/* Privacy & Terms Links */}
+        <div className="flex justify-center gap-4 mt-6 text-xs text-gray-500">
+          <Link
+            href="/privacy"
+            className="hover:text-gray-700 transition-colors"
+          >
+            Privacy Policy
+          </Link>
+          <span>•</span>
+          <Link
+            href="/terms"
+            className="hover:text-gray-700 transition-colors"
+          >
+            Terms of Service
+          </Link>
+        </div>
+      </div>
     </motion.div>
   );
 };
