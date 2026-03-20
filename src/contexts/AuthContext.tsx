@@ -63,10 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     // Get initial session
     const getSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -81,8 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Error getting session:", error);
         }
       } finally {
-        setInitialized(true);
-        setLoading(false);
+        if (isMounted) {
+          setInitialized(true);
+          setLoading(false);
+        }
       }
     };
 
@@ -91,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -105,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);

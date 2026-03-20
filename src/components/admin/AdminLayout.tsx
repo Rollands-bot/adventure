@@ -3,21 +3,36 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { profile, signOut, isAdmin, isStaff } = useAuth();
+  const { profile, signOut, isAdmin, isStaff, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Check authorization
+  // Check authorization only after loading is complete
+  useEffect(() => {
+    if (!loading && !isStaff) {
+      router.push("/");
+    }
+  }, [loading, isStaff, router]);
+
+  // Show loading spinner while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // Don't render anything if not authorized (redirect will happen)
   if (!isStaff) {
-    router.push("/");
     return null;
   }
 
