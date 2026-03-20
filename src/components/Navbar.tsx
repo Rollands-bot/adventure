@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isAdmin, isStaff } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -60,7 +60,7 @@ const Navbar = () => {
             {!loading && user ? (
               <>
                 <Link
-                  href="/dashboard"
+                  href={isAdmin || isStaff ? "/admin" : "/dashboard"}
                   className="font-medium text-gray-700 transition-colors hover:text-brand-600"
                 >
                   Dashboard
@@ -148,7 +148,7 @@ const Navbar = () => {
             {!loading && user ? (
               <>
                 <Link
-                  href="/dashboard"
+                  href={isAdmin || isStaff ? "/admin" : "/dashboard"}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="block text-gray-700 hover:text-brand-600 font-medium"
                 >

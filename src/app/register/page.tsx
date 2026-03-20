@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSupabaseClient } from "@/lib/supabase";
 import AuthCard from "@/components/AuthCard";
 import Navbar from "@/components/Navbar";
 
@@ -21,8 +22,9 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  
-  const { signIn, signUp } = useAuth();
+
+  const { signIn, signUp, user } = useAuth();
+  const supabase = getSupabaseClient();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -64,9 +66,10 @@ export default function RegisterPage() {
 
       // Auto sign in after register
       const { error: signInError } = await signIn(formData.email, formData.password);
-      
+
       if (!signInError) {
-        router.push("/");
+        // Redirect to dashboard for new users
+        router.push("/dashboard");
         router.refresh();
       }
     } catch (err: any) {

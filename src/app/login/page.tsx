@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSupabaseClient } from "@/lib/supabase";
 import AuthCard from "@/components/AuthCard";
 import Navbar from "@/components/Navbar";
 
@@ -15,8 +16,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
+  const supabase = getSupabaseClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +29,22 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      // Redirect based on role will be handled by middleware
-      router.push("/");
+      // Get user profile to determine redirect
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user?.id)
+        .single();
+
+      // Redirect based on role
+      if (profile?.role === "super_admin") {
+        router.push("/admin");
+      } else if (profile?.role === "staff") {
+        router.push("/admin/orders");
+      } else {
+        router.push("/dashboard");
+      }
+      
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Email atau password salah");
