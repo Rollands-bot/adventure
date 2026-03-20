@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   const { signIn, signUp, user } = useAuth();
@@ -36,7 +37,9 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess(false);
 
+    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError("Password tidak cocok");
       return;
@@ -64,14 +67,21 @@ export default function RegisterPage() {
 
       if (error) throw error;
 
-      // Auto sign in after register
-      const { error: signInError } = await signIn(formData.email, formData.password);
+      // Success - show message and redirect to login
+      setSuccess(true);
+      setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setAgreeTerms(false);
 
-      if (!signInError) {
-        // Redirect to dashboard for new users
-        router.push("/dashboard");
-        router.refresh();
-      }
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        router.push("/login?registered=true");
+      }, 3000);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan. Silakan coba lagi.");
     } finally {
@@ -90,6 +100,22 @@ export default function RegisterPage() {
         footerLink="/login"
         footerLinkText="Masuk sekarang"
       >
+        {success ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Registrasi Berhasil!</h3>
+            <p className="text-gray-600 mb-4">
+              Cek email Anda untuk verifikasi akun
+            </p>
+            <p className="text-sm text-gray-500">
+              Redirect ke halaman login dalam 3 detik...
+            </p>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name Input */}
           <div>
@@ -251,8 +277,13 @@ export default function RegisterPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
-              {error}
+            <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-red-600 text-sm">{error}</div>
+              </div>
             </div>
           )}
 
@@ -275,6 +306,7 @@ export default function RegisterPage() {
             )}
           </button>
         </form>
+        )}
       </AuthCard>
       </div>
     </div>

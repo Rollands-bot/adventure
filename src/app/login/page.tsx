@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +15,20 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
   const { signIn, user } = useAuth();
   const supabase = getSupabaseClient();
+
+  // Check for registered query param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("registered") === "true") {
+      setSuccessMessage("Registrasi berhasil! Silakan login dengan email Anda.");
+      // Clear query param
+      window.history.replaceState({}, "", "/login");
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +75,18 @@ export default function LoginPage() {
         footerLink="/register"
         footerLinkText="Daftar sekarang"
       >
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-green-600 text-sm">{successMessage}</div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email Input */}
           <div>
