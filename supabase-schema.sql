@@ -322,6 +322,107 @@ CREATE TRIGGER handle_orders_updated_at
   EXECUTE FUNCTION public.handle_updated_at();
 
 -- ============================================
+-- CATEGORIES TABLE (for product categorization)
+-- ============================================
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
+
+-- Enable RLS for categories
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can view categories
+CREATE POLICY "Everyone can view categories"
+  ON categories FOR SELECT
+  USING (true);
+
+-- Staff and super admin can manage categories
+CREATE POLICY "Staff can manage categories"
+  ON categories FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid()
+      AND role IN ('super_admin', 'staff')
+    )
+  );
+
+-- Trigger for categories updated_at
+CREATE TRIGGER handle_categories_updated_at
+  BEFORE UPDATE ON categories
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+-- ============================================
+-- STORAGE BUCKETS (for product images & payment proofs)
+-- ============================================
+
+-- Create bucket for product images
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('products', 'products', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Create bucket for payment proofs
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('payment-proofs', 'payment-proofs', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- STORAGE RLS POLICIES - PRODUCTS BUCKET
+-- ============================================
+
+-- Allow public read access for product images
+CREATE POLICY "Public Read Access"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'products');
+
+-- Allow authenticated users to upload product images
+CREATE POLICY "Authenticated Upload Access"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'products' 
+    AND auth.role() = 'authenticated'
+  );
+
+-- Allow authenticated users to update product images
+CREATE POLICY "Authenticated Update Access"
+  ON storage.objects FOR UPDATE
+  USING (
+    bucket_id = 'products' 
+    AND auth.role() = 'authenticated'
+  );
+
+-- Allow authenticated users to delete product images
+CREATE POLICY "Authenticated Delete Access"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'products' 
+    AND auth.role() = 'authenticated'
+  );
+
+-- ============================================
+-- STORAGE RLS POLICIES - PAYMENT PROOFS BUCKET
+-- ============================================
+
+-- Allow public read access for payment proofs (admin view)
+CREATE POLICY "Public Read Access"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'payment-proofs');
+
+-- Allow authenticated users to upload payment proofs
+CREATE POLICY "Authenticated Upload Access"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'payment-proofs' 
+    AND auth.role() = 'authenticated'
+  );
+
+-- ============================================
 -- SEED DATA (Optional - for testing)
 -- ============================================
 

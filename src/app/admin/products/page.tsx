@@ -16,6 +16,11 @@ export default function AdminProducts() {
   const [newCategory, setNewCategory] = useState("");
   const { supabase } = useAuth();
 
+  const [imageUploadMethod, setImageUploadMethod] = useState<"url" | "file">("url");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -80,6 +85,9 @@ export default function AdminProducts() {
       is_available: true,
     });
     setEditingProduct(null);
+    setSelectedImageFile(null);
+    setImagePreview(null);
+    setImageUploadMethod("url");
   };
 
   const openModal = (product?: Product) => {
@@ -94,10 +102,61 @@ export default function AdminProducts() {
         image_url: product.image_url,
         is_available: product.is_available,
       });
+      setImagePreview(product.image_url);
     } else {
       resetForm();
     }
     setShowModal(true);
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        alert("File harus berupa gambar (JPG, PNG, dll)");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran file maksimal 5MB");
+        return;
+      }
+      setSelectedImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedImageFile) return formData.image_url || null;
+    
+    try {
+      setUploadingImage(true);
+      const fileExt = selectedImageFile.name.split(".").pop();
+      const fileName = `product-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("products")
+        .upload(fileName, selectedImageFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("products")
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Gagal upload gambar");
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleAddCategory = async () => {
@@ -142,13 +201,26 @@ export default function AdminProducts() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Upload image if file selected
+    let imageUrl = formData.image_url;
+    if (selectedImageFile) {
+      const uploadedUrl = await uploadImage();
+      if (!uploadedUrl) return;
+      imageUrl = uploadedUrl;
+    }
+
+    if (!imageUrl) {
+      alert("Gambar produk harus diisi (URL atau upload file)");
+      return;
+    }
+
     const productData = {
       name: formData.name,
       description: formData.description,
       price_per_day: parseInt(formData.price_per_day),
       category: formData.category,
       stock: parseInt(formData.stock),
-      image_url: formData.image_url,
+      image_url: imageUrl,
       is_available: formData.is_available,
     };
 
@@ -436,17 +508,87 @@ export default function AdminProducts() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    URL Gambar
+                    Gambar Produk
                   </label>
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, image_url: e.target.value })
-                    }
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
+                  
+                  {/* Upload Method Toggle */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setImageUploadMethod("url")}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        imageUploadMethod === "url"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageUploadMethod("file")}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        imageUploadMethod === "file"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                  </div>
+
+                  {imageUploadMethod === "url" ? (
+                    <input
+                      type="url"
+                      value={formData.image_url}
+                      onChange={(e) =>
+                        setFormData({ ...formData, image_url: e.target.value })
+                      }
+                      required
+                      placeholder="https://example.com/gambar.jpg"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                      <p className="text-sm text-gray-500">
+                        Format: JPG, PNG | Maksimal 5MB
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Image Preview */}
+                  {(imagePreview || formData.image_url) && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                      <div className="relative w-full max-w-xs">
+                        <Image
+                          src={imagePreview || formData.image_url}
+                          alt="Preview"
+                          width={320}
+                          height={240}
+                          className="rounded-lg border border-gray-200 object-cover"
+                        />
+                        {imageUploadMethod === "file" && selectedImageFile && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagePreview(null);
+                              setSelectedImageFile(null);
+                            }}
+                            className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center">
@@ -468,15 +610,23 @@ export default function AdminProducts() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    disabled={uploadingImage}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    disabled={uploadingImage}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
-                    {editingProduct ? "Update" : "Simpan"}
+                    {uploadingImage && (
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    )}
+                    {uploadingImage ? "Mengupload..." : (editingProduct ? "Update" : "Simpan")}
                   </button>
                 </div>
               </form>
