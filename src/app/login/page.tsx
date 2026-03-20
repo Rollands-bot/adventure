@@ -77,11 +77,16 @@ export default function LoginPage() {
       e.preventDefault();
       e.stopPropagation();
       
-      // Use replace instead of href to prevent back button issues
+      // Clear any query params first to prevent redirect loops
+      window.history.replaceState({}, "", "/login");
+      
+      // Use href instead of replace for more reliable redirect
       setTimeout(() => {
         console.log("🔄 Executing redirect to:", redirectUrl);
-        window.location.replace(redirectUrl);
-      }, 200);
+        // Set a flag to prevent redirect loop
+        sessionStorage.setItem('justLoggedIn', 'true');
+        window.location.href = redirectUrl;
+      }, 300);
 
       return true;
       
