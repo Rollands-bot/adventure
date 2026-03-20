@@ -73,11 +73,16 @@ export default function LoginPage() {
 
       console.log("✅ Redirecting to:", redirectUrl);
 
-      // Force redirect using window.location
-      setTimeout(() => {
-        window.location.href = redirectUrl;
-      }, 100);
+      // Force redirect - prevent any default behavior
+      e.preventDefault();
+      e.stopPropagation();
       
+      // Use replace instead of href to prevent back button issues
+      setTimeout(() => {
+        console.log("🔄 Executing redirect to:", redirectUrl);
+        window.location.replace(redirectUrl);
+      }, 200);
+
       return true;
       
     } catch (err: any) {
