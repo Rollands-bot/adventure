@@ -25,13 +25,17 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("registered") === "true") {
       setSuccessMessage("Registrasi berhasil! Silakan login dengan email Anda.");
-      // Clear query param
-      window.history.replaceState({}, "", "/login");
+      // Clear query param after showing message
+      const timeoutId = setTimeout(() => {
+        window.history.replaceState({}, "", "/login");
+      }, 1000);
+      return () => clearTimeout(timeoutId);
     }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setError("");
     setIsLoading(true);
 
@@ -59,7 +63,7 @@ export default function LoginPage() {
         throw new Error("Failed to fetch user profile: " + profileError.message);
       }
 
-      console.log("User role:", profile?.role);
+      console.log("✅ User role:", profile?.role);
 
       // Determine redirect URL
       let redirectUrl = "/dashboard";
@@ -69,15 +73,20 @@ export default function LoginPage() {
         redirectUrl = "/admin/orders";
       }
 
-      console.log("Redirecting to:", redirectUrl);
+      console.log("✅ Redirecting to:", redirectUrl);
 
-      // Use window.location for more reliable redirect
-      window.location.href = redirectUrl;
+      // Force redirect using window.location
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 100);
+      
+      return true;
       
     } catch (err: any) {
-      console.error("Login error:", err);
+      console.error("❌ Login error:", err);
       setError(err.message || "Email atau password salah");
       setIsLoading(false);
+      return false;
     }
   };
 
