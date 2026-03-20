@@ -115,83 +115,76 @@ ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 -- PROFILES POLICIES
 -- ============================================
 
--- Users can view their own profile
-CREATE POLICY "Users can view own profile"
+-- Drop conflicting policies first
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Super admin can manage all profiles" ON profiles;
+DROP POLICY IF EXISTS "Enable insert for authentication" ON profiles;
+
+-- Allow authenticated users to view any profile (needed to avoid recursion)
+CREATE POLICY "Authenticated users can view profiles"
   ON profiles FOR SELECT
-  USING (auth.uid() = id);
+  USING (auth.role() = 'authenticated');
 
 -- Users can update their own profile
 CREATE POLICY "Users can update own profile"
   ON profiles FOR UPDATE
   USING (auth.uid() = id);
 
--- Admins can view all profiles
-CREATE POLICY "Admins can view all profiles"
-  ON profiles FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role IN ('super_admin', 'staff')
-    )
-  );
+-- Allow insert for new user creation (trigger)
+CREATE POLICY "Enable insert for authentication"
+  ON profiles FOR INSERT
+  WITH CHECK (true);
 
--- Super admin can manage all profiles
-CREATE POLICY "Super admin can manage all profiles"
-  ON profiles FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role = 'super_admin'
-    )
-  );
+-- Allow authenticated users to delete their own profile
+CREATE POLICY "Users can delete own profile"
+  ON profiles FOR DELETE
+  USING (auth.uid() = id);
 
 -- ============================================
 -- PRODUCTS POLICIES
 -- ============================================
 
--- Everyone can view available products
-CREATE POLICY "Everyone can view products"
+-- Drop conflicting policies first
+DROP POLICY IF EXISTS "Everyone can view products" ON products;
+DROP POLICY IF EXISTS "Staff can insert products" ON products;
+DROP POLICY IF EXISTS "Staff can update products" ON products;
+DROP POLICY IF EXISTS "Staff can delete products" ON products;
+
+-- Everyone can view products
+CREATE POLICY "Public can view products"
   ON products FOR SELECT
   USING (true);
 
--- Staff and super admin can insert products
-CREATE POLICY "Staff can insert products"
-  ON products FOR INSERT
+-- Staff and super admin can manage products (check role in profiles table safely)
+CREATE POLICY "Staff can manage products"
+  ON products FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+      AND p.role IN ('super_admin', 'staff')
+    )
+  )
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role IN ('super_admin', 'staff')
-    )
-  );
-
--- Staff and super admin can update products
-CREATE POLICY "Staff can update products"
-  ON products FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role IN ('super_admin', 'staff')
-    )
-  );
-
--- Staff and super admin can delete products
-CREATE POLICY "Staff can delete products"
-  ON products FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role IN ('super_admin', 'staff')
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+      AND p.role IN ('super_admin', 'staff')
     )
   );
 
 -- ============================================
 -- ORDERS POLICIES
 -- ============================================
+
+-- Drop conflicting policies first
+DROP POLICY IF EXISTS "Users can view own orders" ON orders;
+DROP POLICY IF EXISTS "Users can create orders" ON orders;
+DROP POLICY IF EXISTS "Users can update own orders" ON orders;
+DROP POLICY IF EXISTS "Staff can view all orders" ON orders;
+DROP POLICY IF EXISTS "Staff can update all orders" ON orders;
 
 -- Users can view their own orders
 CREATE POLICY "Users can view own orders"
@@ -207,35 +200,36 @@ CREATE POLICY "Users can create orders"
 CREATE POLICY "Users can update own orders"
   ON orders FOR UPDATE
   USING (
-    auth.uid() = user_id 
+    auth.uid() = user_id
     AND status = 'pending'
   );
 
--- Staff and super admin can view all orders
-CREATE POLICY "Staff can view all orders"
-  ON orders FOR SELECT
+-- Staff and super admin can view and manage all orders
+CREATE POLICY "Staff can manage all orders"
+  ON orders FOR ALL
   USING (
     EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role IN ('super_admin', 'staff')
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+      AND p.role IN ('super_admin', 'staff')
     )
-  );
-
--- Staff and super admin can update all orders
-CREATE POLICY "Staff can update all orders"
-  ON orders FOR UPDATE
-  USING (
+  )
+  WITH CHECK (
     EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role IN ('super_admin', 'staff')
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+      AND p.role IN ('super_admin', 'staff')
     )
   );
 
 -- ============================================
 -- ORDER ITEMS POLICIES
 -- ============================================
+
+-- Drop conflicting policies first
+DROP POLICY IF EXISTS "Users can view own order items" ON order_items;
+DROP POLICY IF EXISTS "Staff can view all order items" ON order_items;
+DROP POLICY IF EXISTS "Users can create order items" ON order_items;
 
 -- Users can view their own order items
 CREATE POLICY "Users can view own order items"
@@ -253,9 +247,9 @@ CREATE POLICY "Staff can view all order items"
   ON order_items FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role IN ('super_admin', 'staff')
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+      AND p.role IN ('super_admin', 'staff')
     )
   );
 
