@@ -268,6 +268,16 @@ CREATE POLICY "Users can create order items"
 -- FUNCTIONS & TRIGGERS
 -- ============================================
 
+-- Drop existing triggers first
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS handle_profiles_updated_at ON profiles;
+DROP TRIGGER IF EXISTS handle_products_updated_at ON products;
+DROP TRIGGER IF EXISTS handle_orders_updated_at ON orders;
+
+-- Drop existing functions
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS public.handle_updated_at() CASCADE;
+
 -- Function to automatically create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -346,11 +356,8 @@ CREATE POLICY "Staff can manage categories"
     )
   );
 
--- Trigger for categories updated_at
-CREATE TRIGGER handle_categories_updated_at
-  BEFORE UPDATE ON categories
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_updated_at();
+-- Trigger for categories updated_at (already created in FUNCTIONS & TRIGGERS section)
+-- No need to create again here
 
 -- ============================================
 -- STORAGE BUCKETS (for product images & payment proofs)
