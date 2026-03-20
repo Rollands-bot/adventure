@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSupabaseClient } from "@/lib/supabase";
 import { Order } from "@/types";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -18,8 +17,7 @@ export default function DashboardPage() {
     totalSpent: 0,
   });
   const router = useRouter();
-  const { user, profile, loading: authLoading } = useAuth();
-  const supabase = getSupabaseClient();
+  const { user, profile, loading: authLoading, supabase } = useAuth();
 
   useEffect(() => {
     if (!authLoading && !user) {
