@@ -36,16 +36,25 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { error, data } = await signIn(email, password);
 
       if (error) throw error;
 
+      // Get user ID from session data
+      const userId = data?.user?.id;
+
+      if (!userId) {
+        throw new Error("User ID not found");
+      }
+
       // Get user profile to determine redirect
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", user?.id)
+        .eq("id", userId)
         .single();
+
+      if (profileError) throw profileError;
 
       // Redirect based on role
       if (profile?.role === "super_admin") {
@@ -55,7 +64,7 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard");
       }
-      
+
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Email atau password salah");
