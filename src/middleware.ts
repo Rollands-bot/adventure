@@ -23,6 +23,7 @@ export async function middleware(req: NextRequest) {
     }
   )
 
+  // TEMPORARILY DISABLED FOR DEBUGGING
   // Protect admin routes
   const { pathname } = req.nextUrl
 
@@ -36,8 +37,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // Skip role check for now - let the page handle authorization
-    // This avoids RLS policy issues during middleware
+    // Skip role check - let the page handle authorization
   }
 
   return res
