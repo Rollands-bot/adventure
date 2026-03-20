@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSupabaseClient } from "@/lib/supabase";
 import AuthCard from "@/components/AuthCard";
 import Navbar from "@/components/Navbar";
 
@@ -17,8 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
-  const { signIn, user } = useAuth();
-  const supabase = getSupabaseClient();
+  const { signIn, supabase } = useAuth();
 
   // Check for registered query param
   useEffect(() => {
