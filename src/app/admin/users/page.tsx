@@ -36,16 +36,33 @@ export default function AdminUsers() {
     if (!confirm(`Ubah role user ini menjadi ${role.replace("_", " ")}?`)) return;
 
     try {
-      const { error } = await supabase
+      console.log("Updating user role:", userId, role);
+      
+      const { data, error } = await supabase
         .from("profiles")
-        .update({ role })
-        .eq("id", userId);
+        .update({ role, updated_at: new Date().toISOString() })
+        .eq("id", userId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      console.log("Update result:", data);
+      
+      if (!data || data.length === 0) {
+        throw new Error("No rows updated - check RLS policies");
+      }
+      
+      alert("✅ Role user berhasil diupdate!");
       fetchUsers();
-    } catch (error) {
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser({ ...selectedUser, role });
+      }
+    } catch (error: any) {
       console.error("Error updating user role:", error);
-      alert("Gagal update role user");
+      alert(`❌ Gagal update role user:\n${error.message || "Periksa RLS policies"}`);
     }
   };
 

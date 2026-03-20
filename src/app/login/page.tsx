@@ -73,20 +73,9 @@ export default function LoginPage() {
 
       console.log("✅ Redirecting to:", redirectUrl);
 
-      // Force redirect - prevent any default behavior
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Clear any query params first to prevent redirect loops
-      window.history.replaceState({}, "", "/login");
-      
-      // Use href instead of replace for more reliable redirect
-      setTimeout(() => {
-        console.log("🔄 Executing redirect to:", redirectUrl);
-        // Set a flag to prevent redirect loop
-        sessionStorage.setItem('justLoggedIn', 'true');
-        window.location.href = redirectUrl;
-      }, 300);
+      // Use Next.js router for client-side navigation (no full reload)
+      // This allows React state to update properly, including navbar
+      router.push(redirectUrl);
 
       return true;
       
