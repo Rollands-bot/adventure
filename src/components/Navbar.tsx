@@ -5,9 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 
 const Navbar = () => {
   const { user, loading, signOut, isAdmin, isStaff } = useAuth();
+  const { totalItems } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -53,6 +55,20 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            {/* Cart Icon */}
+            <Link
+              href="/cart"
+              className="relative p-2 text-gray-700 hover:text-brand-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-600 text-white text-xs rounded-full flex items-center justify-center">
+                  {totalItems > 9 ? "9+" : totalItems}
+                </span>
+              )}
+            </Link>
           </div>
 
           {/* CTA Button */}
@@ -156,6 +172,19 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            {/* Cart Link */}
+            <Link
+              href="/cart"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block text-gray-700 hover:text-brand-600 font-medium"
+            >
+              Keranjang
+              {totalItems > 0 && (
+                <span className="ml-2 px-2 py-0.5 bg-brand-600 text-white text-xs rounded-full">
+                  {totalItems} item
+                </span>
+              )}
+            </Link>
             {!loading && user ? (
               <>
                 <Link

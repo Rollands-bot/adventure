@@ -1,66 +1,54 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
+import { Product } from "@/types";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 const Products = () => {
-  const products = [
-    {
-      image: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=800&q=80",
-      name: "Tenda Dome 4 Person",
-      price: 75000,
-      category: "Tenda",
-      rating: 5,
-    },
-    {
-      image: "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=800&q=80",
-      name: "Carrier 60L",
-      price: 50000,
-      category: "Tas",
-      rating: 5,
-    },
-    {
-      image: "https://images.unsplash.com/photo-1556817411-31ae72fa3ea0?auto=format&fit=crop&w=800&q=80",
-      name: "Sleeping Bag -5°C",
-      price: 35000,
-      category: "Sleeping Bag",
-      rating: 4,
-    },
-    {
-      image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=800&q=80",
-      name: "Kompor Portable",
-      price: 25000,
-      category: "Masak",
-      rating: 5,
-    },
-    {
-      image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
-      name: "Sepatu Hiking",
-      price: 45000,
-      category: "Footwear",
-      rating: 4,
-    },
-    {
-      image: "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?auto=format&fit=crop&w=800&q=80",
-      name: "Matras Camping",
-      price: 20000,
-      category: "Alas",
-      rating: 4,
-    },
-    {
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-      name: "Headlamp LED",
-      price: 15000,
-      category: "Lampu",
-      rating: 5,
-    },
-    {
-      image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=800&q=80",
-      name: "Trekking Pole",
-      price: 30000,
-      category: "Aksesoris",
-      rating: 4,
-    },
-  ];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("is_available", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      setProducts(data || []);
+      
+      // Extract unique categories
+      if (data) {
+        const uniqueCategories = Array.from(new Set(data.map(p => p.category)));
+        setCategories(uniqueCategories);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = selectedCategory === "all" 
+    ? products 
+    : products.filter(p => p.category === selectedCategory);
 
   return (
     <main className="min-h-screen">
@@ -79,19 +67,65 @@ const Products = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product, index) => (
-              <ProductCard
-                key={product.name}
-                image={product.image}
-                name={product.name}
-                price={product.price}
-                category={product.category}
-                rating={product.rating}
-                delay={index * 0.1}
-              />
+          {/* Category Filter */}
+          <div className="mb-8 flex gap-2 flex-wrap justify-center">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                selectedCategory === "all"
+                  ? "bg-brand-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+              }`}
+            >
+              Semua
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors capitalize ${
+                  selectedCategory === category
+                    ? "bg-brand-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                {category}
+              </button>
             ))}
           </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredProducts.map((product, index) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  image={product.image_url}
+                  name={product.name}
+                  price={product.price_per_day}
+                  category={product.category}
+                  rating={product.rating || 5}
+                  delay={index * 0.1}
+                />
+              ))}
+            </div>
+          )}
+
+          {!loading && filteredProducts.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Produk Tidak Ditemukan</h3>
+              <p className="text-gray-600">Coba pilih kategori lain</p>
+            </div>
+          )}
         </div>
       </section>
       <Footer />

@@ -11,6 +11,9 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState("");
   const { supabase } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -25,6 +28,7 @@ export default function AdminProducts() {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
@@ -43,12 +47,34 @@ export default function AdminProducts() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("name")
+        .order("name");
+
+      if (error) {
+        // If table doesn't exist, extract from products
+        const { data: products } = await supabase.from("products").select("category");
+        if (products) {
+          const uniqueCategories = Array.from(new Set(products.map(p => p.category)));
+          setCategories(uniqueCategories);
+        }
+      } else {
+        setCategories(data.map(c => c.name));
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
       description: "",
       price_per_day: "",
-      category: "",
+      category: categories[0] || "",
       stock: "",
       image_url: "",
       is_available: true,
@@ -72,6 +98,45 @@ export default function AdminProducts() {
       resetForm();
     }
     setShowModal(true);
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) return;
+    
+    try {
+      // Try to insert into categories table if exists
+      await supabase.from("categories").insert([{ name: newCategory.trim() }]).catch(() => {
+        // Ignore if table doesn't exist
+      });
+      
+      setCategories([...categories, newCategory.trim()]);
+      setFormData({ ...formData, category: newCategory.trim() });
+      setNewCategory("");
+      setShowCategoryModal(false);
+    } catch (error) {
+      console.error("Error adding category:", error);
+    }
+  };
+
+  const handleDeleteCategory = async (category: string) => {
+    if (!confirm(`Hapus kategori "${category}"? Pastikan tidak ada produk yang menggunakan kategori ini.`)) return;
+    
+    try {
+      // Check if any products use this category
+      const { data } = await supabase.from("products").select("id").eq("category", category).limit(1);
+      if (data && data.length > 0) {
+        alert("Kategori masih digunakan oleh produk. Hapus atau ubah kategori produk terlebih dahulu.");
+        return;
+      }
+      
+      await supabase.from("categories").delete().eq("name", category).catch(() => {
+        // Ignore if table doesn't exist
+      });
+      
+      setCategories(categories.filter(c => c !== category));
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,15 +196,26 @@ export default function AdminProducts() {
           <h1 className="text-2xl font-bold text-gray-900">Produk</h1>
           <p className="text-gray-600 mt-1">Kelola produk rental Anda</p>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Tambah Produk
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCategoryModal(true)}
+            className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            Kategori
+          </button>
+          <button
+            onClick={() => openModal()}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Tambah Produk
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -282,15 +358,31 @@ export default function AdminProducts() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Kategori
                     </label>
-                    <input
-                      type="text"
-                      value={formData.category}
-                      onChange={(e) =>
-                        setFormData({ ...formData, category: e.target.value })
-                      }
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    />
+                    <div className="flex gap-2">
+                      <select
+                        value={formData.category}
+                        onChange={(e) =>
+                          setFormData({ ...formData, category: e.target.value })
+                        }
+                        required
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setShowCategoryModal(true)}
+                        className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -388,6 +480,91 @@ export default function AdminProducts() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category Management Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={() => setShowCategoryModal(false)}
+            />
+
+            <div className="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900">Kelola Kategori</h3>
+                <button
+                  onClick={() => setShowCategoryModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Add Category */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tambah Kategori Baru
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Nama kategori..."
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
+                  />
+                  <button
+                    onClick={handleAddCategory}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Tambah
+                  </button>
+                </div>
+              </div>
+
+              {/* Categories List */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Daftar Kategori</h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {categories.map((category) => (
+                    <div
+                      key={category}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <span className="font-medium text-gray-900 capitalize">{category}</span>
+                      <button
+                        onClick={() => handleDeleteCategory(category)}
+                        className="text-red-600 hover:text-red-700 text-sm"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                  {categories.length === 0 && (
+                    <p className="text-gray-500 text-sm text-center py-4">
+                      Belum ada kategori
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         </div>
