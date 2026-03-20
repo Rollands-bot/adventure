@@ -15,7 +15,7 @@ export default function CheckoutPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [processing, setProcessing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] =<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
