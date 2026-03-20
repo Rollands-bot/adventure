@@ -54,21 +54,29 @@ export default function LoginPage() {
         .eq("id", userId)
         .single();
 
-      if (profileError) throw profileError;
-
-      // Redirect based on role
-      if (profile?.role === "super_admin") {
-        router.push("/admin");
-      } else if (profile?.role === "staff") {
-        router.push("/admin/orders");
-      } else {
-        router.push("/dashboard");
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        throw new Error("Failed to fetch user profile: " + profileError.message);
       }
 
-      router.refresh();
+      console.log("User role:", profile?.role);
+
+      // Determine redirect URL
+      let redirectUrl = "/dashboard";
+      if (profile?.role === "super_admin") {
+        redirectUrl = "/admin";
+      } else if (profile?.role === "staff") {
+        redirectUrl = "/admin/orders";
+      }
+
+      console.log("Redirecting to:", redirectUrl);
+
+      // Use window.location for more reliable redirect
+      window.location.href = redirectUrl;
+      
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(err.message || "Email atau password salah");
-    } finally {
       setIsLoading(false);
     }
   };
