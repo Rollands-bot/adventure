@@ -140,6 +140,28 @@ export default function CheckoutPage() {
       // Clear cart
       clearCart();
 
+      // Fetch signed admin action URLs (1-click confirm/reject from WhatsApp)
+      let adminQuickActions = "";
+      try {
+        const linksRes = await fetch("/api/orders/action-links", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id }),
+        });
+        if (linksRes.ok) {
+          const { confirmUrl, rejectUrl } = await linksRes.json();
+          adminQuickActions = `
+
+━━━━━━━━━━━━━━━━━━━━
+🔐 *ADMIN QUICK ACTION*
+✅ Konfirmasi: ${confirmUrl}
+❌ Tolak: ${rejectUrl}
+━━━━━━━━━━━━━━━━━━━━`;
+        }
+      } catch (linkErr) {
+        console.error("Gagal generate admin links:", linkErr);
+      }
+
       // Redirect to WhatsApp for validation
       const adminPhone = "6285129966730";
       const productLines = items
@@ -167,7 +189,7 @@ ${productLines}
 
 ${selectedFile ? "✅ Saya sudah upload bukti transfer" : "⏳ Saya akan transfer segera"}${formData.notes ? `\n\n📝 *Catatan:* ${formData.notes}` : ""}
 
-Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!`;
+Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!${adminQuickActions}`;
 
       const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`;
       
