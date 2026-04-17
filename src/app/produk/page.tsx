@@ -5,12 +5,7 @@ import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import { Product } from "@/types";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);

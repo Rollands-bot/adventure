@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { User, Session } from "@supabase/supabase-js";
+import { SupabaseClient, User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { UserProfile, UserRole } from "@/types";
 
 interface AuthContextType {
@@ -21,18 +21,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Singleton Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  }
-);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

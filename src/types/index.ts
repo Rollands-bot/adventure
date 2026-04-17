@@ -38,6 +38,7 @@ export interface Order {
   items: OrderItem[];
   payment_method?: string;
   payment_status: PaymentStatus;
+  payment_proof_url?: string | null;
   notes?: string;
   created_at: string;
   updated_at: string;

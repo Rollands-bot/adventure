@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS orders (
   end_date DATE NOT NULL,
   payment_method TEXT,
   payment_status payment_status NOT NULL DEFAULT 'pending',
+  payment_proof_url TEXT,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
