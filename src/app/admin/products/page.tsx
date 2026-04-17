@@ -163,11 +163,12 @@ export default function AdminProducts() {
     if (!newCategory.trim()) return;
     
     try {
-      // Try to insert into categories table if exists
-      await supabase.from("categories").insert([{ name: newCategory.trim() }]).catch(() => {
-        // Ignore if table doesn't exist
-      });
-      
+      // Try to insert into categories table if exists (silently ignore if not)
+      const { error: insertErr } = await supabase
+        .from("categories")
+        .insert([{ name: newCategory.trim() }]);
+      if (insertErr) console.warn("Categories table insert skipped:", insertErr.message);
+
       setCategories([...categories, newCategory.trim()]);
       setFormData({ ...formData, category: newCategory.trim() });
       setNewCategory("");
@@ -188,10 +189,12 @@ export default function AdminProducts() {
         return;
       }
       
-      await supabase.from("categories").delete().eq("name", category).catch(() => {
-        // Ignore if table doesn't exist
-      });
-      
+      const { error: deleteErr } = await supabase
+        .from("categories")
+        .delete()
+        .eq("name", category);
+      if (deleteErr) console.warn("Categories table delete skipped:", deleteErr.message);
+
       setCategories(categories.filter(c => c !== category));
     } catch (error) {
       console.error("Error deleting category:", error);

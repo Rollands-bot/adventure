@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import Image from "next/image";
 
 export default function CartPage() {
-  const { items, removeFromCart, updateQuantity, updateRentalDays, totalPrice, clearCart } = useCart();
+  const { items, removeFromCart, updateQuantity, updateRentalDays, updateStartDate, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const [processing, setProcessing] = useState(false);
