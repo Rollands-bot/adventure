@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import Image from "next/image";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user, profile, supabase } = useAuth();
+  const { user, profile, loading: authLoading, supabase } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [processing, setProcessing] = useState(false);
@@ -29,17 +29,29 @@ export default function CheckoutPage() {
 
   const [error, setError] = useState("");
 
-  // Redirect if not logged in
-  if (!user) {
-    router.push("/login");
-    return null;
-  }
+  // Redirect based on auth/cart state (side effects belong in useEffect, not render)
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    if (items.length === 0) {
+      router.replace("/produk");
+    }
+  }, [authLoading, user, items.length, router]);
 
-  // Redirect if cart is empty
-  if (items.length === 0) {
-    router.push("/produk");
-    return null;
-  }
+  // Sync form defaults once profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || profile.full_name || "",
+        email: prev.email || profile.email || "",
+        phone: prev.phone || profile.phone || "",
+      }));
+    }
+  }, [profile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,6 +78,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user || processing) return;
     setError("");
     setProcessing(true);
 
@@ -206,6 +219,18 @@ Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!${adminQuick
       setProcessing(false);
     }
   };
+
+  if (authLoading || !user || items.length === 0) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh] pt-24">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+        </div>
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">

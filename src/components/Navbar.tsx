@@ -83,19 +83,8 @@ const Navbar = () => {
                 </Link>
                 <button
                   onClick={async () => {
-                    try {
-                      await signOut();
-                      // Clear all cookies and redirect
-                      document.cookie.split(";").forEach((c) => {
-                        document.cookie = c
-                          .replace(/^ +/, "")
-                          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                      });
-                      window.location.replace("/");
-                    } catch (error) {
-                      console.error("Logout error:", error);
-                      window.location.href = "/";
-                    }
+                    await signOut();
+                    window.location.replace("/");
                   }}
                   className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors"
                 >
@@ -196,21 +185,9 @@ const Navbar = () => {
                 </Link>
                 <button
                   onClick={async () => {
-                    try {
-                      await signOut();
-                      setIsMobileMenuOpen(false);
-                      // Clear all cookies and redirect
-                      document.cookie.split(";").forEach((c) => {
-                        document.cookie = c
-                          .replace(/^ +/, "")
-                          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                      });
-                      window.location.replace("/");
-                    } catch (error) {
-                      console.error("Logout error:", error);
-                      setIsMobileMenuOpen(false);
-                      window.location.href = "/";
-                    }
+                    setIsMobileMenuOpen(false);
+                    await signOut();
+                    window.location.replace("/");
                   }}
                   className="w-full text-left text-red-600 font-medium"
                 >

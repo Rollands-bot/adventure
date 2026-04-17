@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
-  const { signIn, supabase } = useAuth();
+  const { signIn } = useAuth();
 
   // Check for registered query param
   useEffect(() => {
@@ -33,57 +33,21 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
+    if (isLoading) return;
     setError("");
     setIsLoading(true);
 
     try {
-      const { error, data } = await signIn(email, password);
-
+      const { error } = await signIn(email, password);
       if (error) throw error;
 
-      // Get user ID from session data
-      const userId = data?.user?.id;
-
-      if (!userId) {
-        throw new Error("User ID not found");
-      }
-
-      // Get user profile to determine redirect
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .single();
-
-      if (profileError) {
-        console.error("Profile fetch error:", profileError);
-        throw new Error("Failed to fetch user profile: " + profileError.message);
-      }
-
-      console.log("✅ User role:", profile?.role);
-
-      // Determine redirect URL
-      let redirectUrl = "/dashboard";
-      if (profile?.role === "super_admin") {
-        redirectUrl = "/admin";
-      } else if (profile?.role === "staff") {
-        redirectUrl = "/admin/orders";
-      }
-
-      console.log("✅ Redirecting to:", redirectUrl);
-
-      // Use Next.js router for client-side navigation (no full reload)
-      // This allows React state to update properly, including navbar
-      router.push(redirectUrl);
-
-      return true;
-      
+      // AuthContext picks up session via onAuthStateChange and fetches profile.
+      // Redirect to /dashboard — admins can access /admin from navbar link that
+      // appears once profile loads.
+      router.push("/dashboard");
     } catch (err: any) {
-      console.error("❌ Login error:", err);
       setError(err.message || "Email atau password salah");
       setIsLoading(false);
-      return false;
     }
   };
 

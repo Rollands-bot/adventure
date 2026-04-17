@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Product } from "@/types";
-import { useAuth } from "./AuthContext";
 
 export interface CartItem {
   product: Product;
@@ -27,24 +26,24 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const { user } = useAuth();
+  const [hydrated, setHydrated] = useState(false);
 
   // Load cart from localStorage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart));
-      } catch (error) {
-        console.error("Error loading cart:", error);
-      }
+    try {
+      const savedCart = localStorage.getItem("cart");
+      if (savedCart) setItems(JSON.parse(savedCart));
+    } catch (error) {
+      console.error("Error loading cart:", error);
     }
+    setHydrated(true);
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Save cart to localStorage whenever it changes (skip initial render before hydration)
   useEffect(() => {
+    if (!hydrated) return;
     localStorage.setItem("cart", JSON.stringify(items));
-  }, [items]);
+  }, [items, hydrated]);
 
   const addToCart = (product: Product, quantity: number, rental_days: number, start_date: string) => {
     setItems((prev) => {

@@ -14,7 +14,7 @@ interface AuthContextType {
   isStaff: boolean;
   isSuperAdmin: boolean;
   hasRole: (roles: UserRole[]) => boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data?: any; error: any }>;
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   supabase: SupabaseClient;
@@ -22,83 +22,66 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const PROFILE_FETCH_TIMEOUT_MS = 5000;
+
+const fetchProfileWithTimeout = async (
+  userId: string,
+): Promise<UserProfile | null> => {
+  try {
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Profile fetch timeout")),
+        PROFILE_FETCH_TIMEOUT_MS,
+      ),
+    );
+
+    const query = supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    const { data, error } = await Promise.race([query, timeout]);
+    if (error) throw error;
+    return data as UserProfile;
+  } catch (error: any) {
+    if (error?.message?.includes("Lock") || error?.message?.includes("timeout")) {
+      console.warn("Profile fetch skipped:", error.message);
+    } else {
+      console.error("Error fetching profile:", error);
+    }
+    return null;
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error: any) {
-      // Ignore lock errors - they're usually transient
-      if (error?.message?.includes('Lock')) {
-        console.warn('Auth lock warning (can be ignored):', error.message);
-      } else {
-        console.error("Error fetching profile:", error);
-        setProfile(null);
-      }
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
 
-    // Get initial session
-    const getSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!isMounted) return;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
+    // onAuthStateChange fires INITIAL_SESSION on subscribe in supabase-js v2,
+    // so we don't need a separate getSession() call (avoids dual profile fetch).
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return;
 
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        }
-      } catch (error: any) {
-        // Ignore lock errors - they're usually transient
-        if (error?.message?.includes('Lock')) {
-          console.warn('Auth lock warning (can be ignored):', error.message);
-        } else {
-          console.error("Error getting session:", error);
-        }
-      } finally {
-        if (isMounted) {
-          setInitialized(true);
-          setLoading(false);
-        }
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        const profileData = await fetchProfileWithTimeout(session.user.id);
+        if (isMounted) setProfile(profileData);
+      } else {
+        setProfile(null);
       }
-    };
 
-    getSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!isMounted) return;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-
-        setLoading(false);
-      }
-    );
+      if (isMounted) setLoading(false);
+    });
 
     return () => {
       isMounted = false;
@@ -114,33 +97,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      return { data, error };
-    } catch (error: any) {
-      return { data: null, error };
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { data, error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, phone: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone,
-          },
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    phone: string,
+  ) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          phone,
         },
-      });
-      return { error };
-    } catch (error: any) {
-      return { error };
-    }
+      },
+    });
+    return { error };
   };
 
   const hasRole = (roles: UserRole[]): boolean => {
