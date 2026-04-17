@@ -142,6 +142,15 @@ export default function CheckoutPage() {
 
       // Redirect to WhatsApp for validation
       const adminPhone = "6285129966730";
+      const productLines = items
+        .map((item, i) => {
+          const subtotal =
+            item.product.price_per_day * item.quantity * item.rental_days;
+          return `${i + 1}. ${item.product.name} (${item.product.category})
+   ${item.quantity} unit × ${item.rental_days} hari × Rp${item.product.price_per_day.toLocaleString("id-ID")} = Rp${subtotal.toLocaleString("id-ID")}`;
+        })
+        .join("\n");
+
       const message = `Halo Admin Ruang Aktif Adventure! 🏕️
 
 Saya sudah melakukan pemesanan dengan detail:
@@ -150,9 +159,13 @@ Saya sudah melakukan pemesanan dengan detail:
 👤 *Nama:* ${formData.fullName}
 📱 *WhatsApp:* ${formData.phone}
 📅 *Tanggal Sewa:* ${startDate.toLocaleDateString("id-ID")} - ${endDate.toLocaleDateString("id-ID")} (${formData.rentalDays} hari)
+
+🛒 *Daftar Produk:*
+${productLines}
+
 💰 *Total Pembayaran:* Rp${totalPrice.toLocaleString("id-ID")}
 
-${selectedFile ? "✅ Saya sudah upload bukti transfer" : "⏳ Saya akan transfer segera"}
+${selectedFile ? "✅ Saya sudah upload bukti transfer" : "⏳ Saya akan transfer segera"}${formData.notes ? `\n\n📝 *Catatan:* ${formData.notes}` : ""}
 
 Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!`;
 
