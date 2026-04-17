@@ -107,7 +107,7 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="w-10 h-10 bg-brand-600/10 rounded-full flex items-center justify-center group-hover:bg-brand-600 transition-colors"
+              className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center group-hover:bg-brand-600 transition-colors"
             >
               <svg
                 className="w-5 h-5 text-brand-600 group-hover:text-white transition-colors"

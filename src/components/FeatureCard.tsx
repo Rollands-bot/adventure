@@ -20,7 +20,7 @@ const FeatureCard = ({ icon, title, description, delay = 0 }: FeatureCardProps) 
       whileHover={{ y: -8, scale: 1.02 }}
       className="card p-8 text-center group"
     >
-      <div className="w-16 h-16 bg-brand-600/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-600 group-hover:scale-110 transition-all duration-300">
+      <div className="w-16 h-16 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-600 group-hover:scale-110 transition-all duration-300">
         <div className="text-brand-600 group-hover:text-white transition-colors duration-300">
           {icon}
         </div>
