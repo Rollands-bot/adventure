@@ -1,11 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthCard from "@/components/AuthCard";
 import Navbar from "@/components/Navbar";
+
+const EMAIL_PROVIDERS: Record<string, { name: string; url: string }> = {
+  "gmail.com": { name: "Gmail", url: "https://mail.google.com" },
+  "googlemail.com": { name: "Gmail", url: "https://mail.google.com" },
+  "yahoo.com": { name: "Yahoo Mail", url: "https://mail.yahoo.com" },
+  "yahoo.co.id": { name: "Yahoo Mail", url: "https://mail.yahoo.com" },
+  "outlook.com": { name: "Outlook", url: "https://outlook.live.com/mail" },
+  "hotmail.com": { name: "Outlook", url: "https://outlook.live.com/mail" },
+  "live.com": { name: "Outlook", url: "https://outlook.live.com/mail" },
+  "icloud.com": { name: "iCloud Mail", url: "https://www.icloud.com/mail" },
+  "me.com": { name: "iCloud Mail", url: "https://www.icloud.com/mail" },
+  "proton.me": { name: "Proton Mail", url: "https://mail.proton.me" },
+  "protonmail.com": { name: "Proton Mail", url: "https://mail.proton.me" },
+};
+
+const getEmailProvider = (email: string) => {
+  const domain = email.split("@")[1]?.toLowerCase();
+  if (!domain) return null;
+  return EMAIL_PROVIDERS[domain] ?? null;
+};
+
+const RESEND_COOLDOWN_SEC = 60;
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -21,6 +43,10 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
   const router = useRouter();
 
   const { signIn, signUp, supabase } = useAuth();
@@ -65,7 +91,8 @@ export default function RegisterPage() {
 
       if (error) throw error;
 
-      // Success - show message and redirect to login
+      // Keep email for the inbox shortcut + resend; clear other fields.
+      setRegisteredEmail(formData.email);
       setSuccess(true);
       setFormData({
         fullName: "",
@@ -75,15 +102,53 @@ export default function RegisterPage() {
         confirmPassword: "",
       });
       setAgreeTerms(false);
-
-      // Redirect to login after 3 seconds
-      setTimeout(() => {
-        router.push("/login?registered=true");
-      }, 3000);
+      setResendCooldown(RESEND_COOLDOWN_SEC);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Poll session every 3s after registration. When the user clicks the
+  // confirmation link (which sets a cookie), getSession() picks it up and
+  // we auto-redirect — no need to manually return to this tab.
+  useEffect(() => {
+    if (!success) return;
+    const interval = setInterval(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user?.email_confirmed_at) {
+        clearInterval(interval);
+        router.push("/dashboard");
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [success, supabase, router]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || isResending || !registeredEmail) return;
+    setIsResending(true);
+    setResendMessage("");
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: registeredEmail,
+      });
+      if (error) throw error;
+      setResendMessage("Email konfirmasi sudah dikirim ulang.");
+      setResendCooldown(RESEND_COOLDOWN_SEC);
+    } catch (err: any) {
+      setResendMessage(err.message || "Gagal mengirim ulang email.");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -99,19 +164,62 @@ export default function RegisterPage() {
         footerLinkText="Masuk sekarang"
       >
         {success ? (
-          <div className="text-center py-8">
+          <div className="text-center py-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Registrasi Berhasil!</h3>
-            <p className="text-gray-600 mb-4">
-              Cek email Anda untuk verifikasi akun
+            <p className="text-gray-600 mb-1">
+              Kami sudah mengirim link verifikasi ke
             </p>
-            <p className="text-sm text-gray-500">
-              Redirect ke halaman login dalam 3 detik...
+            <p className="font-medium text-gray-900 mb-6 break-all">
+              {registeredEmail}
             </p>
+
+            {(() => {
+              const provider = getEmailProvider(registeredEmail);
+              if (!provider) return null;
+              return (
+                <a
+                  href={provider.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/30 mb-3"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Buka {provider.name}
+                </a>
+              );
+            })()}
+
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendCooldown > 0 || isResending}
+              className="w-full text-sm font-medium text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed py-2 transition-colors"
+            >
+              {isResending
+                ? "Mengirim..."
+                : resendCooldown > 0
+                ? `Kirim ulang dalam ${resendCooldown}s`
+                : "Tidak menerima email? Kirim ulang"}
+            </button>
+
+            {resendMessage && (
+              <p className="text-sm text-gray-600 mt-2">{resendMessage}</p>
+            )}
+
+            <div className="flex items-center justify-center gap-2 mt-6 text-xs text-gray-400">
+              <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span>Menunggu verifikasi… halaman akan otomatis lanjut.</span>
+            </div>
           </div>
         ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
