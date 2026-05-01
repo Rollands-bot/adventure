@@ -62,8 +62,13 @@ const Navbar = () => {
     window.location.replace("/");
   };
 
-  const AvatarCircle = ({ size = "md" }: { size?: "sm" | "md" }) => {
-    const dim = size === "sm" ? "w-9 h-9 text-sm" : "w-10 h-10 text-base";
+  const AvatarCircle = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
+    const dim =
+      size === "lg"
+        ? "w-12 h-12 text-lg"
+        : size === "sm"
+        ? "w-9 h-9 text-sm"
+        : "w-10 h-10 text-base";
     return (
       <div
         className={`${dim} rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-semibold overflow-hidden flex-shrink-0`}
@@ -137,14 +142,14 @@ const Navbar = () => {
             <CartIcon />
           </div>
 
-          {/* Right cluster: avatar (or login/register) + hamburger on mobile */}
+          {/* Right cluster */}
           <div className="flex items-center gap-2 md:gap-4">
             {/* Mobile-only cart */}
             <CartIcon className="md:hidden" />
 
-            {/* Logged-in: avatar dropdown (visible on all sizes) */}
+            {/* Desktop: avatar dropdown when logged in */}
             {!loading && user && (
-              <div className="relative" ref={avatarRef}>
+              <div className="hidden md:block relative" ref={avatarRef}>
                 <button
                   type="button"
                   onClick={() => setIsAvatarOpen((o) => !o)}
@@ -164,7 +169,7 @@ const Navbar = () => {
                       exit={{ opacity: 0, y: -8, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
                       role="menu"
-                      className="absolute right-0 mt-3 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                      className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
                     >
                       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                         <AvatarCircle size="sm" />
@@ -207,7 +212,7 @@ const Navbar = () => {
               </div>
             )}
 
-            {/* Logged-out: desktop inline login/register */}
+            {/* Desktop: login/register when logged out */}
             {!loading && !user && (
               <div className="hidden md:flex items-center space-x-4">
                 <Link
@@ -245,7 +250,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile menu drawer — nav links only; user actions live in avatar dropdown */}
+      {/* Mobile drawer — single source of truth on phones */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -255,35 +260,91 @@ const Navbar = () => {
             transition={{ duration: 0.2 }}
             className="md:hidden bg-white border-t overflow-hidden"
           >
-            <div className="px-4 py-4 space-y-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <div className="px-4 py-4 space-y-3">
+              {!loading && user && (
+                <>
+                  {/* User card */}
+                  <div className="flex items-center gap-3 px-2 py-3 bg-gray-50 rounded-xl">
+                    <AvatarCircle size="lg" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {displayName}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Nav links */}
+                  <div className="space-y-1 pt-1">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* User actions */}
+                  <div className="pt-2 border-t border-gray-100 space-y-1">
+                    <Link
+                      href={dashboardHref}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
+                    >
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      {dashboardLabel}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-3 px-2 py-2.5 rounded-lg text-red-600 hover:bg-red-50 font-medium"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
 
               {!loading && !user && (
-                <div className="pt-2 space-y-2">
-                  <Link
-                    href="/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block text-center btn-outline text-sm"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block text-center btn-primary text-sm"
-                  >
-                    Register
-                  </Link>
-                </div>
+                <>
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <div className="pt-2 space-y-2">
+                    <Link
+                      href="/login"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block text-center btn-outline text-sm"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block text-center btn-primary text-sm"
+                    >
+                      Register
+                    </Link>
+                  </div>
+                </>
               )}
             </div>
           </motion.div>
