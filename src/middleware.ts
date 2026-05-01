@@ -41,11 +41,20 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const { data: profile } = await supabase
+    // Race profile fetch against a 3s timeout so a slow query
+    // doesn't strand the request.
+    const profilePromise = supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
+    const timeoutPromise = new Promise<{ data: null }>((resolve) =>
+      setTimeout(() => resolve({ data: null }), 3000),
+    );
+    const { data: profile } = await Promise.race([
+      profilePromise,
+      timeoutPromise,
+    ]);
 
     const role = (profile as { role?: string } | null)?.role;
     if (role !== "super_admin" && role !== "staff") {
