@@ -44,11 +44,20 @@ export default function LoginPage() {
       const userId = data?.user?.id;
       let role: string | undefined;
       if (userId) {
-        const { data: profile } = await supabase
+        // Race profile fetch against a 2s timeout so a slow/hung query
+        // doesn't strand the user on a spinning login button.
+        const profilePromise = supabase
           .from("profiles")
           .select("role")
           .eq("id", userId)
           .single();
+        const timeoutPromise = new Promise<{ data: null }>((resolve) =>
+          setTimeout(() => resolve({ data: null }), 2000),
+        );
+        const { data: profile } = await Promise.race([
+          profilePromise,
+          timeoutPromise,
+        ]);
         role = (profile as { role?: string } | null)?.role;
       }
 
