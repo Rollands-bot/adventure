@@ -21,7 +21,6 @@ const Navbar = () => {
     { href: "/kontak", label: "Kontak" },
   ];
 
-  // Close avatar dropdown on outside click / Escape.
   useEffect(() => {
     if (!isAvatarOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -84,6 +83,23 @@ const Navbar = () => {
     );
   };
 
+  const CartIcon = ({ className = "" }: { className?: string }) => (
+    <Link
+      href="/cart"
+      className={`relative p-2 text-gray-700 hover:text-brand-600 transition-colors ${className}`}
+      aria-label="Keranjang"
+    >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+      </svg>
+      {totalItems > 0 && (
+        <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-600 text-white text-xs rounded-full flex items-center justify-center">
+          {totalItems > 9 ? "9+" : totalItems}
+        </span>
+      )}
+    </Link>
+  );
+
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -94,20 +110,20 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
             <Image
               src="/logo.png"
               alt="Ruang Aktif Adventure"
               width={70}
               height={70}
-              className="rounded-lg"
+              className="rounded-lg w-12 h-12 md:w-[70px] md:h-[70px]"
             />
-            <span className="font-bold text-xl hidden sm:block text-gray-900">
+            <span className="font-bold text-base sm:text-xl hidden sm:block text-gray-900">
               Ruang Aktif Adventure
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop nav links */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
@@ -118,25 +134,16 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Cart Icon */}
-            <Link
-              href="/cart"
-              className="relative p-2 text-gray-700 hover:text-brand-600 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-600 text-white text-xs rounded-full flex items-center justify-center">
-                  {totalItems > 9 ? "9+" : totalItems}
-                </span>
-              )}
-            </Link>
+            <CartIcon />
           </div>
 
-          {/* Right side: avatar dropdown OR login/register */}
-          <div className="hidden md:flex items-center space-x-4">
-            {!loading && user ? (
+          {/* Right cluster: avatar (or login/register) + hamburger on mobile */}
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Mobile-only cart */}
+            <CartIcon className="md:hidden" />
+
+            {/* Logged-in: avatar dropdown (visible on all sizes) */}
+            {!loading && user && (
               <div className="relative" ref={avatarRef}>
                 <button
                   type="button"
@@ -157,9 +164,8 @@ const Navbar = () => {
                       exit={{ opacity: 0, y: -8, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
                       role="menu"
-                      className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                      className="absolute right-0 mt-3 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
                     >
-                      {/* Header */}
                       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                         <AvatarCircle size="sm" />
                         <div className="min-w-0 flex-1">
@@ -172,7 +178,6 @@ const Navbar = () => {
                         </div>
                       </div>
 
-                      {/* Menu Items */}
                       <Link
                         href={dashboardHref}
                         onClick={() => setIsAvatarOpen(false)}
@@ -200,8 +205,11 @@ const Navbar = () => {
                   )}
                 </AnimatePresence>
               </div>
-            ) : (
-              <>
+            )}
+
+            {/* Logged-out: desktop inline login/register */}
+            {!loading && !user && (
+              <div className="hidden md:flex items-center space-x-4">
                 <Link
                   href="/login"
                   className="font-medium text-gray-700 transition-colors hover:text-brand-600"
@@ -214,31 +222,16 @@ const Navbar = () => {
                 >
                   Register
                 </Link>
-              </>
+              </div>
             )}
-          </div>
 
-          {/* Mobile right side */}
-          <div className="md:hidden flex items-center gap-2">
-            {!loading && user && (
-              <Link
-                href="/cart"
-                className="relative p-2 text-gray-700 hover:text-brand-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-600 text-white text-xs rounded-full flex items-center justify-center">
-                    {totalItems > 9 ? "9+" : totalItems}
-                  </span>
-                )}
-              </Link>
-            )}
+            {/* Hamburger - mobile only */}
             <button
+              type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-900"
+              className="md:hidden p-2 rounded-lg text-gray-900"
               aria-label="Toggle menu"
+              aria-expanded={isMobileMenuOpen}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isMobileMenuOpen ? (
@@ -252,7 +245,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu drawer — nav links only; user actions live in avatar dropdown */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -263,21 +256,6 @@ const Navbar = () => {
             className="md:hidden bg-white border-t overflow-hidden"
           >
             <div className="px-4 py-4 space-y-1">
-              {/* User card on mobile */}
-              {!loading && user && (
-                <div className="flex items-center gap-3 px-2 py-3 mb-2 bg-gray-50 rounded-xl">
-                  <AvatarCircle />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {displayName}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -288,37 +266,8 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/cart"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
-              >
-                Keranjang
-                {totalItems > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-brand-600 text-white text-xs rounded-full">
-                    {totalItems} item
-                  </span>
-                )}
-              </Link>
 
-              {!loading && user ? (
-                <>
-                  <Link
-                    href={dashboardHref}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
-                  >
-                    {dashboardLabel}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="w-full text-left px-2 py-2.5 rounded-lg text-red-600 hover:bg-red-50 font-medium"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
+              {!loading && !user && (
                 <div className="pt-2 space-y-2">
                   <Link
                     href="/login"
