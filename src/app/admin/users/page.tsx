@@ -93,7 +93,66 @@ export default function AdminUsers() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <>
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-3">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 font-semibold">
+                      {(user.full_name || user.email || "U")
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {user.full_name || "—"}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.email}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {user.phone || "—"}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span
+                        className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRoleBadgeColor(
+                          user.role
+                        )}`}
+                      >
+                        {user.role.replace("_", " ")}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        Sejak {new Date(user.created_at).toLocaleDateString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setShowModal(true);
+                  }}
+                  className="mt-3 pt-3 border-t border-gray-100 w-full text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Edit Role →
+                </button>
+              </div>
+            ))}
+            {users.length === 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
+                Belum ada user
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -170,6 +229,7 @@ export default function AdminUsers() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Edit Role Modal */}

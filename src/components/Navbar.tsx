@@ -121,7 +121,7 @@ const Navbar = () => {
               alt="Ruang Aktif Adventure"
               width={70}
               height={70}
-              className="rounded-lg w-12 h-12 md:w-[70px] md:h-[70px]"
+              className="rounded-full w-12 h-12 md:w-[70px] md:h-[70px] object-cover"
             />
             <span className="font-bold text-base sm:text-xl hidden sm:block text-gray-900">
               Ruang Aktif Adventure

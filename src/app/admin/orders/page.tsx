@@ -168,7 +168,74 @@ export default function AdminOrders() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <>
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-3">
+            {orders.map((order) => (
+              <div
+                key={order.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-mono text-gray-500">
+                      {order.id.slice(0, 8)}…
+                    </p>
+                    <h3 className="font-semibold text-gray-900 truncate mt-0.5">
+                      {(order.user as any)?.full_name || "Unknown"}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate">
+                      {(order.user as any)?.email || ""}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-gray-900">
+                      Rp{order.total_amount.toLocaleString("id-ID")}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {order.rental_days} hari
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  {new Date(order.start_date).toLocaleDateString("id-ID")}
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <span
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(
+                      order.status
+                    )}`}
+                  >
+                    {order.status}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${getPaymentStatusColor(
+                      order.payment_status
+                    )}`}
+                  >
+                    {order.payment_status}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedOrder(order);
+                    setShowModal(true);
+                  }}
+                  className="mt-3 pt-3 border-t border-gray-100 w-full text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Lihat Detail →
+                </button>
+              </div>
+            ))}
+            {orders.length === 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
+                Belum ada pesanan
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -262,6 +329,7 @@ export default function AdminOrders() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Detail Modal */}

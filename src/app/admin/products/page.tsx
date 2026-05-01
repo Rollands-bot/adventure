@@ -298,7 +298,75 @@ export default function AdminProducts() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <>
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-3">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4"
+              >
+                <div className="flex gap-3">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                    <Image
+                      src={product.image_url}
+                      alt={product.name}
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {product.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded-full">
+                        {product.category}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full ${
+                          product.is_available
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {product.is_available ? "Tersedia" : "Tidak Tersedia"}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-3 text-sm">
+                      <span className="font-semibold text-gray-900">
+                        Rp{product.price_per_day.toLocaleString("id-ID")}/hari
+                      </span>
+                      <span className="text-gray-500">Stok: {product.stock}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                  <button
+                    onClick={() => openModal(product)}
+                    className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product.id)}
+                    className="flex-1 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            ))}
+            {products.length === 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
+                Belum ada produk
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -386,6 +454,7 @@ export default function AdminProducts() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Modal */}

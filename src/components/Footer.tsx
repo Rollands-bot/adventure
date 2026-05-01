@@ -62,7 +62,7 @@ const Footer = () => {
                 alt="Ruang Aktif Adventure"
                 width={70}
                 height={70}
-                className="rounded-lg"
+                className="rounded-full object-cover"
               />
               <span className="font-bold text-xl">Ruang Aktif Adventure</span>
             </Link>
