@@ -20,11 +20,6 @@ export const metadata: Metadata = {
     "camping gear",
   ],
   authors: [{ name: "Ruang Aktif Adventure" }],
-  icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
-  },
   openGraph: {
     title: "Ruang Aktif Adventure - Sewa Perlengkapan Outdoor Tanpa Ribet",
     description:

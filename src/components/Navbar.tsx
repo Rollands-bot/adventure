@@ -115,15 +115,15 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <Image
               src="/logo.png"
               alt="Ruang Aktif Adventure"
-              width={70}
-              height={70}
-              className="rounded-full w-12 h-12 md:w-[70px] md:h-[70px] object-cover"
+              width={80}
+              height={80}
+              className="rounded-full w-10 h-10 object-cover"
             />
-            <span className="font-bold text-base sm:text-xl hidden sm:block text-gray-900">
+            <span className="font-bold text-base md:text-lg hidden sm:block text-gray-900">
               Ruang Aktif Adventure
             </span>
           </Link>
