@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, supabase } = useAuth();
 
   // Check for registered query param
   useEffect(() => {
@@ -38,13 +38,30 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { data, error } = await signIn(email, password);
       if (error) throw error;
 
-      // AuthContext picks up session via onAuthStateChange and fetches profile.
-      // Redirect to /dashboard — admins can access /admin from navbar link that
-      // appears once profile loads.
-      router.push("/dashboard");
+      const userId = data?.user?.id;
+      let role: string | undefined;
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+        role = (profile as { role?: string } | null)?.role;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirect");
+
+      if (redirectTo) {
+        router.push(redirectTo);
+      } else if (role === "super_admin" || role === "staff") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "Email atau password salah");
       setIsLoading(false);
