@@ -38,11 +38,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Caller can override destination via ?next=...
-  let destination = next ?? "/dashboard";
+  let destination = next ?? "/produk";
 
-  // Otherwise route by role + device. Admins always land in /admin;
-  // regular users go to /produk on phones (where they're more likely
-  // browsing) and /dashboard on desktop.
+  // Otherwise route by role: super_admin / staff -> /admin, everyone
+  // else -> /produk (so a freshly signed-in user lands on the catalog).
   if (!next) {
     const {
       data: { user },
@@ -54,15 +53,8 @@ export async function GET(request: NextRequest) {
         .eq("id", user.id)
         .single();
       const role = (profile as { role?: string } | null)?.role;
-      const isMobile = /Mobi/i.test(request.headers.get("user-agent") ?? "");
-
-      if (role === "super_admin" || role === "staff") {
-        destination = "/admin";
-      } else if (isMobile) {
-        destination = "/produk";
-      } else {
-        destination = "/dashboard";
-      }
+      destination =
+        role === "super_admin" || role === "staff" ? "/admin" : "/produk";
     }
   }
 
