@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,9 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 
 const Navbar = () => {
-  const { user, loading, signOut, isAdmin, isStaff } = useAuth();
+  const { user, profile, loading, signOut, isAdmin, isStaff } = useAuth();
   const { totalItems } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAvatarOpen, setIsAvatarOpen] = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -18,6 +20,69 @@ const Navbar = () => {
     { href: "/cara-kerja", label: "Cara Kerja" },
     { href: "/kontak", label: "Kontak" },
   ];
+
+  // Close avatar dropdown on outside click / Escape.
+  useEffect(() => {
+    if (!isAvatarOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+        setIsAvatarOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsAvatarOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [isAvatarOpen]);
+
+  const avatarUrl =
+    profile?.avatar_url ||
+    (user?.user_metadata?.avatar_url as string | undefined) ||
+    (user?.user_metadata?.picture as string | undefined);
+
+  const displayName =
+    profile?.full_name ||
+    (user?.user_metadata?.full_name as string | undefined) ||
+    (user?.user_metadata?.name as string | undefined) ||
+    user?.email?.split("@")[0] ||
+    "User";
+
+  const initial = displayName.charAt(0).toUpperCase();
+  const dashboardHref = isAdmin || isStaff ? "/admin" : "/dashboard";
+  const dashboardLabel = isAdmin || isStaff ? "Admin Panel" : "Dashboard";
+
+  const handleSignOut = async () => {
+    setIsAvatarOpen(false);
+    setIsMobileMenuOpen(false);
+    await signOut();
+    window.location.replace("/");
+  };
+
+  const AvatarCircle = ({ size = "md" }: { size?: "sm" | "md" }) => {
+    const dim = size === "sm" ? "w-9 h-9 text-sm" : "w-10 h-10 text-base";
+    return (
+      <div
+        className={`${dim} rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-semibold overflow-hidden flex-shrink-0`}
+      >
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl}
+            alt={displayName}
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <span>{initial}</span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <motion.nav
@@ -37,9 +102,7 @@ const Navbar = () => {
               height={70}
               className="rounded-lg"
             />
-            <span
-              className="font-bold text-xl hidden sm:block text-gray-900"
-            >
+            <span className="font-bold text-xl hidden sm:block text-gray-900">
               Ruang Aktif Adventure
             </span>
           </Link>
@@ -71,26 +134,71 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* CTA Button */}
+          {/* Right side: avatar dropdown OR login/register */}
           <div className="hidden md:flex items-center space-x-4">
             {!loading && user ? (
-              <>
-                <Link
-                  href={isAdmin || isStaff ? "/admin" : "/dashboard"}
-                  className="font-medium text-gray-700 transition-colors hover:text-brand-600"
-                >
-                  Dashboard
-                </Link>
+              <div className="relative" ref={avatarRef}>
                 <button
-                  onClick={async () => {
-                    await signOut();
-                    window.location.replace("/");
-                  }}
-                  className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors"
+                  type="button"
+                  onClick={() => setIsAvatarOpen((o) => !o)}
+                  aria-haspopup="menu"
+                  aria-expanded={isAvatarOpen}
+                  className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500/40 ring-offset-2 transition-all hover:ring-2 hover:ring-brand-200"
                 >
-                  Logout
+                  <AvatarCircle />
                 </button>
-              </>
+
+                <AnimatePresence>
+                  {isAvatarOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      role="menu"
+                      className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                        <AvatarCircle size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {displayName}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <Link
+                        href={dashboardHref}
+                        onClick={() => setIsAvatarOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        role="menuitem"
+                      >
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        {dashboardLabel}
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
+                        role="menuitem"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
               <>
                 <Link
@@ -109,34 +217,37 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-900"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {/* Mobile right side */}
+          <div className="md:hidden flex items-center gap-2">
+            {!loading && user && (
+              <Link
+                href="/cart"
+                className="relative p-2 text-gray-700 hover:text-brand-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-600 text-white text-xs rounded-full flex items-center justify-center">
+                    {totalItems > 9 ? "9+" : totalItems}
+                  </span>
+                )}
+              </Link>
+            )}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-lg text-gray-900"
+              aria-label="Toggle menu"
             >
-              {isMobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
-          </button>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -148,72 +259,84 @@ const Navbar = () => {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden bg-white border-t"
+            className="md:hidden bg-white border-t overflow-hidden"
           >
-          <div className="px-4 py-4 space-y-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block text-gray-700 hover:text-brand-600 font-medium"
-              >
-                {link.label}
-              </Link>
-            ))}
-            {/* Cart Link */}
-            <Link
-              href="/cart"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-gray-700 hover:text-brand-600 font-medium"
-            >
-              Keranjang
-              {totalItems > 0 && (
-                <span className="ml-2 px-2 py-0.5 bg-brand-600 text-white text-xs rounded-full">
-                  {totalItems} item
-                </span>
+            <div className="px-4 py-4 space-y-1">
+              {/* User card on mobile */}
+              {!loading && user && (
+                <div className="flex items-center gap-3 px-2 py-3 mb-2 bg-gray-50 rounded-xl">
+                  <AvatarCircle />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {displayName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
               )}
-            </Link>
-            {!loading && user ? (
-              <>
+
+              {navLinks.map((link) => (
                 <Link
-                  href={isAdmin || isStaff ? "/admin" : "/dashboard"}
+                  key={link.href}
+                  href={link.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-gray-700 hover:text-brand-600 font-medium"
+                  className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
                 >
-                  Dashboard
+                  {link.label}
                 </Link>
-                <button
-                  onClick={async () => {
-                    setIsMobileMenuOpen(false);
-                    await signOut();
-                    window.location.replace("/");
-                  }}
-                  className="w-full text-left text-red-600 font-medium"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-center btn-outline text-sm"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-center btn-primary text-sm"
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
-        </motion.div>
+              ))}
+              <Link
+                href="/cart"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
+              >
+                Keranjang
+                {totalItems > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-brand-600 text-white text-xs rounded-full">
+                    {totalItems} item
+                  </span>
+                )}
+              </Link>
+
+              {!loading && user ? (
+                <>
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-2 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-600 font-medium"
+                  >
+                    {dashboardLabel}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full text-left px-2 py-2.5 rounded-lg text-red-600 hover:bg-red-50 font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <div className="pt-2 space-y-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block text-center btn-outline text-sm"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block text-center btn-primary text-sm"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.nav>
