@@ -125,7 +125,7 @@ export default function AdminUsers() {
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <span className="text-blue-600 font-semibold">
-                            {user.full_name.charAt(0).toUpperCase()}
+                            {(user.full_name || user.email || "U").charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="ml-4">

@@ -63,9 +63,9 @@ export default function CartPage() {
               {items.map((item) => (
                 <div
                   key={item.product.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex gap-4"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex gap-3 sm:gap-4"
                 >
-                  <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-shrink-0">
                     <Image
                       src={item.product.image_url}
                       alt={item.product.name}
@@ -75,16 +75,26 @@ export default function CartPage() {
                     />
                   </div>
 
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
-                    <p className="text-sm text-gray-500 mb-2">{item.product.category}</p>
-                    <p className="text-brand-600 font-bold">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate">{item.product.name}</h3>
+                        <p className="text-sm text-gray-500">{item.product.category}</p>
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item.product.id)}
+                        className="text-red-600 hover:text-red-700 text-sm flex-shrink-0"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                    <p className="text-brand-600 font-bold mt-1">
                       Rp{item.product.price_per_day.toLocaleString("id-ID")}/hari
                     </p>
 
-                    <div className="flex gap-4 mt-3">
+                    <div className="flex flex-wrap gap-3 mt-3">
                       <div>
-                        <label className="text-xs text-gray-500">Jumlah</label>
+                        <label className="block text-xs text-gray-500 mb-0.5">Jumlah</label>
                         <input
                           type="number"
                           min="1"
@@ -93,12 +103,12 @@ export default function CartPage() {
                           onChange={(e) =>
                             updateQuantity(item.product.id, parseInt(e.target.value) || 1)
                           }
-                          className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                          className="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs text-gray-500">Durasi (hari)</label>
+                        <label className="block text-xs text-gray-500 mb-0.5">Durasi (hari)</label>
                         <input
                           type="number"
                           min="1"
@@ -106,34 +116,29 @@ export default function CartPage() {
                           onChange={(e) =>
                             updateRentalDays(item.product.id, parseInt(e.target.value) || 1)
                           }
-                          className="w-24 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                          className="w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs text-gray-500">Tanggal Mulai</label>
+                        <label className="block text-xs text-gray-500 mb-0.5">Tanggal Mulai</label>
                         <input
                           type="date"
                           value={item.start_date}
                           onChange={(e) =>
                             updateStartDate(item.product.id, e.target.value)
                           }
-                          className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                          className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm w-full sm:w-auto"
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">
-                      Rp{(item.product.price_per_day * item.quantity * item.rental_days).toLocaleString("id-ID")}
-                    </p>
-                    <button
-                      onClick={() => removeFromCart(item.product.id)}
-                      className="text-red-600 hover:text-red-700 text-sm mt-2"
-                    >
-                      Hapus
-                    </button>
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                      <span className="text-sm text-gray-500">Subtotal</span>
+                      <span className="text-base sm:text-lg font-bold text-gray-900">
+                        Rp{(item.product.price_per_day * item.quantity * item.rental_days).toLocaleString("id-ID")}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -141,7 +146,7 @@ export default function CartPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:sticky lg:top-24">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Ringkasan Pesanan</h2>
 
                 <div className="space-y-3 mb-6">

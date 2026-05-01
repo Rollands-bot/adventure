@@ -143,6 +143,7 @@ const Navbar = () => {
                   onClick={() => setIsAvatarOpen((o) => !o)}
                   aria-haspopup="menu"
                   aria-expanded={isAvatarOpen}
+                  aria-label="Buka menu user"
                   className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500/40 ring-offset-2 transition-all hover:ring-2 hover:ring-brand-200"
                 >
                   <AvatarCircle />

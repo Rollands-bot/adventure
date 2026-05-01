@@ -273,7 +273,7 @@ export default function AdminOrders() {
               onClick={() => setShowModal(false)}
             />
 
-            <div className="inline-block w-full max-w-3xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+            <div className="inline-block w-full max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 my-4 sm:my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">
                   Detail Pesanan
@@ -294,7 +294,7 @@ export default function AdminOrders() {
                   <h4 className="font-semibold text-gray-900 mb-3">
                     Informasi Customer
                   </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Nama:</span>
                       <p className="font-medium">
@@ -323,7 +323,7 @@ export default function AdminOrders() {
                 </div>
 
                 {/* Order Info */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <span className="text-sm text-gray-500">Tanggal Sewa</span>
                     <p className="font-medium">
@@ -355,7 +355,7 @@ export default function AdminOrders() {
                 </div>
 
                 {/* Status Updates */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Status Pesanan
