@@ -34,13 +34,10 @@ export default function RegisterPage() {
     fullName: "",
     email: "",
     phone: "",
-    password: "",
-    confirmPassword: "",
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
@@ -49,7 +46,7 @@ export default function RegisterPage() {
   const [resendMessage, setResendMessage] = useState("");
   const router = useRouter();
 
-  const { signIn, signUp, supabase } = useAuth();
+  const { signInWithMagicLink, signInWithGoogle, supabase } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -63,17 +60,6 @@ export default function RegisterPage() {
     setError("");
     setSuccess(false);
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError("Password tidak cocok");
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError("Password minimal 8 karakter");
-      return;
-    }
-
     if (!agreeTerms) {
       setError("Anda harus menyetujui syarat & ketentuan");
       return;
@@ -82,31 +68,37 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const { error } = await signUp(
-        formData.email,
-        formData.password,
-        formData.fullName,
-        formData.phone
-      );
+      const { error } = await signInWithMagicLink(formData.email, {
+        data: {
+          full_name: formData.fullName,
+          phone: formData.phone,
+        },
+      });
 
       if (error) throw error;
 
-      // Keep email for the inbox shortcut + resend; clear other fields.
       setRegisteredEmail(formData.email);
       setSuccess(true);
-      setFormData({
-        fullName: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirmPassword: "",
-      });
+      setFormData({ fullName: "", email: "", phone: "" });
       setAgreeTerms(false);
       setResendCooldown(RESEND_COOLDOWN_SEC);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    if (isGoogleLoading) return;
+    setError("");
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || "Gagal mendaftar dengan Google.");
+      setIsGoogleLoading(false);
     }
   };
 
@@ -119,7 +111,7 @@ export default function RegisterPage() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (session?.user?.email_confirmed_at) {
+      if (session?.user) {
         clearInterval(interval);
         router.push("/dashboard");
       }
@@ -138,12 +130,9 @@ export default function RegisterPage() {
     setIsResending(true);
     setResendMessage("");
     try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: registeredEmail,
-      });
+      const { error } = await signInWithMagicLink(registeredEmail);
       if (error) throw error;
-      setResendMessage("Email konfirmasi sudah dikirim ulang.");
+      setResendMessage("Link sudah dikirim ulang.");
       setResendCooldown(RESEND_COOLDOWN_SEC);
     } catch (err: any) {
       setResendMessage(err.message || "Gagal mengirim ulang email.");
@@ -222,7 +211,30 @@ export default function RegisterPage() {
             </div>
           </div>
         ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <>
+          {/* Google Button */}
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={isGoogleLoading || isLoading}
+            className="w-full flex items-center justify-center gap-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-5"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38z" />
+            </svg>
+            {isGoogleLoading ? "Mengarahkan ke Google..." : "Daftar dengan Google"}
+          </button>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400">atau pakai email</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name Input */}
           <div>
             <label
@@ -283,82 +295,6 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Password Input */}
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white pr-12"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Confirm Password Input */}
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Konfirmasi Password
-            </label>
-            <div className="relative">
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white pr-12"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showConfirmPassword ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-
           {/* Terms & Conditions */}
           <div>
             <label className="flex items-start cursor-pointer">
@@ -396,7 +332,7 @@ export default function RegisterPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading}
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 focus:ring-4 focus:ring-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
           >
             {isLoading ? (
@@ -405,13 +341,14 @@ export default function RegisterPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Memproses...
+                Mengirim link...
               </span>
             ) : (
               "Daftar"
             )}
           </button>
         </form>
+        </>
         )}
       </AuthCard>
       </div>

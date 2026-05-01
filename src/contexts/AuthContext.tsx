@@ -16,6 +16,11 @@ interface AuthContextType {
   hasRole: (roles: UserRole[]) => boolean;
   signIn: (email: string, password: string) => Promise<{ data?: any; error: any }>;
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: any }>;
+  signInWithMagicLink: (
+    email: string,
+    opts?: { data?: Record<string, unknown>; shouldCreateUser?: boolean },
+  ) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   supabase: SupabaseClient;
 }
@@ -123,6 +128,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const signInWithMagicLink = async (
+    email: string,
+    opts?: { data?: Record<string, unknown>; shouldCreateUser?: boolean },
+  ) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        data: opts?.data,
+        shouldCreateUser: opts?.shouldCreateUser ?? true,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    return { error };
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    return { error };
+  };
+
   const hasRole = (roles: UserRole[]): boolean => {
     if (!profile) return false;
     return roles.includes(profile.role);
@@ -143,6 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasRole,
     signIn,
     signUp,
+    signInWithMagicLink,
+    signInWithGoogle,
     signOut,
     supabase,
   };
