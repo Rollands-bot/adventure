@@ -48,7 +48,7 @@ const Products = () => {
   return (
     <main className="min-h-screen">
       <Navbar />
-      <section className="section-padding bg-gray-50 pt-24">
+      <section className="section-padding bg-gray-50 pt-28 md:pt-32">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 bg-brand-600/10 rounded-full text-brand-600 font-medium text-sm mb-4">

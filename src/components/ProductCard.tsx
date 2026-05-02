@@ -17,23 +17,41 @@ interface ProductCardProps {
   product?: Product;
 }
 
-const ProductCard = ({ image, name, price, category, rating, delay = 0, product }: ProductCardProps) => {
-  const { addToCart } = useCart();
+const ProductCard = ({
+  image,
+  name,
+  price,
+  category,
+  rating,
+  delay = 0,
+  product,
+}: ProductCardProps) => {
+  const { addToCart, showFlash } = useCart();
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [rentalDays, setRentalDays] = useState(1);
   const [startDate, setStartDate] = useState("");
 
+  const stock = product?.stock ?? 0;
+  const isOutOfStock = stock <= 0;
+  const overStock = quantity > stock;
+  const detailHref = product ? `/produk/${product.id}` : null;
+
+  const openModal = () => {
+    if (!product || isOutOfStock) return;
+    setQuantity(1);
+    setRentalDays(1);
+    setStartDate("");
+    setShowModal(true);
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
-    
+    if (overStock || isOutOfStock) return;
+
     const today = new Date().toISOString().split("T")[0];
-    addToCart(
-      product,
-      quantity,
-      rentalDays,
-      startDate || today
-    );
+    addToCart(product, quantity, rentalDays, startDate || today);
+    showFlash(`${product.name} ditambahkan ke keranjang`);
     setShowModal(false);
   };
 
@@ -49,32 +67,54 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
       >
         {/* Image */}
         <div className="relative h-48 overflow-hidden">
-          <Image
-            src={image}
-            alt={name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover group-hover:scale-110 transition-transform duration-500"
-          />
+          {detailHref ? (
+            <Link href={detailHref} className="block w-full h-full">
+              <Image
+                src={image}
+                alt={name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </Link>
+          ) : (
+            <Image
+              src={image}
+              alt={name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+          )}
           <div className="absolute top-3 left-3">
             <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-gray-700">
               {category}
             </span>
           </div>
-          {/* Quick action button */}
+          {isOutOfStock && (
+            <div className="absolute top-3 right-3">
+              <span className="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-semibold">
+                Stok Habis
+              </span>
+            </div>
+          )}
+          {/* Quick action buttons */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
+            {detailHref && (
+              <Link
+                href={detailHref}
+                className="px-5 py-2 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-gray-700 hover:bg-white transition-colors"
+              >
+                Detail
+              </Link>
+            )}
             <button
-              onClick={() => setShowModal(true)}
-              className="btn-primary text-sm px-6 py-2"
+              onClick={openModal}
+              disabled={isOutOfStock}
+              className="btn-primary text-sm px-5 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sewa Sekarang
+              {isOutOfStock ? "Habis" : "Sewa Sekarang"}
             </button>
-            <Link
-              href="/cart"
-              className="px-6 py-2 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-gray-700 hover:bg-white transition-colors"
-            >
-              Lihat Keranjang
-            </Link>
           </div>
         </div>
 
@@ -96,18 +136,30 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
             <span className="text-sm text-gray-500 ml-2">({rating})</span>
           </div>
 
-          <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-brand-600 transition-colors">
-            {name}
-          </h3>
+          {detailHref ? (
+            <Link href={detailHref}>
+              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
+                {name}
+              </h3>
+            </Link>
+          ) : (
+            <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+              {name}
+            </h3>
+          )}
 
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-2xl font-bold text-brand-600">Rp{price.toLocaleString("id-ID")}</span>
+              <span className="text-2xl font-bold text-brand-600">
+                Rp{price.toLocaleString("id-ID")}
+              </span>
               <span className="text-gray-500 text-sm">/hari</span>
             </div>
             <button
-              onClick={() => setShowModal(true)}
-              className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center group-hover:bg-brand-600 transition-colors"
+              onClick={openModal}
+              disabled={isOutOfStock}
+              aria-label={isOutOfStock ? "Stok habis" : "Tambahkan ke keranjang"}
+              className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center group-hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:group-hover:bg-brand-100"
             >
               <svg
                 className="w-5 h-5 text-brand-600 group-hover:text-white transition-colors"
@@ -136,12 +188,13 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
               onClick={() => setShowModal(false)}
             />
 
-            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+            <div className="inline-block w-full max-w-md max-h-[90vh] overflow-y-auto p-5 sm:p-6 my-4 sm:my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Sewa Produk</h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-gray-400 hover:text-gray-600"
+                  aria-label="Tutup"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -151,7 +204,12 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
 
               <div className="mb-4">
                 <h4 className="font-semibold text-gray-900">{name}</h4>
-                <p className="text-brand-600 font-bold">Rp{price.toLocaleString("id-ID")}/hari</p>
+                <p className="text-brand-600 font-bold">
+                  Rp{price.toLocaleString("id-ID")}/hari
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Stok tersedia: <span className="font-medium text-gray-700">{stock}</span>
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -174,11 +232,21 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
                   </label>
                   <input
                     type="number"
-                    min="1"
+                    min={1}
+                    max={stock}
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    onChange={(e) =>
+                      setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                    }
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                      overStock ? "border-red-400" : "border-gray-300"
+                    }`}
                   />
+                  {overStock && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Maksimal {stock} unit tersedia
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -189,7 +257,9 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
                     type="number"
                     min="1"
                     value={rentalDays}
-                    onChange={(e) => setRentalDays(parseInt(e.target.value) || 1)}
+                    onChange={(e) =>
+                      setRentalDays(Math.max(1, parseInt(e.target.value) || 1))
+                    }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
@@ -209,7 +279,9 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
                   </div>
                   <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span className="text-brand-600">Rp{(price * quantity * rentalDays).toLocaleString("id-ID")}</span>
+                    <span className="text-brand-600">
+                      Rp{(price * quantity * rentalDays).toLocaleString("id-ID")}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -224,7 +296,8 @@ const ProductCard = ({ image, name, price, category, rating, delay = 0, product 
                 </button>
                 <button
                   onClick={handleAddToCart}
-                  className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium"
+                  disabled={overStock || isOutOfStock}
+                  className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Tambah ke Keranjang
                 </button>

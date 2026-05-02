@@ -6,7 +6,7 @@ const CaraKerja = () => {
   return (
     <main className="min-h-screen">
       <Navbar />
-      <section className="pt-24">
+      <section className="pt-28 md:pt-32">
         <HowItWorks />
       </section>
       <Footer />

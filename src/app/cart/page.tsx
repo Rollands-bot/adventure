@@ -53,7 +53,7 @@ export default function CartPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
-      <section className="section-padding pt-24">
+      <section className="section-padding pt-28 md:pt-32">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Keranjang Sewa</h1>
 
@@ -94,16 +94,26 @@ export default function CartPage() {
 
                     <div className="flex flex-wrap gap-3 mt-3">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-0.5">Jumlah</label>
+                        <label className="block text-xs text-gray-500 mb-0.5">
+                          Jumlah <span className="text-gray-400">(stok {item.product.stock})</span>
+                        </label>
                         <input
                           type="number"
-                          min="1"
+                          min={1}
                           max={item.product.stock}
                           value={item.quantity}
-                          onChange={(e) =>
-                            updateQuantity(item.product.id, parseInt(e.target.value) || 1)
-                          }
-                          className="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                          onChange={(e) => {
+                            const next = Math.max(1, parseInt(e.target.value) || 1);
+                            updateQuantity(
+                              item.product.id,
+                              Math.min(next, item.product.stock || 1),
+                            );
+                          }}
+                          className={`w-20 px-2 py-1.5 border rounded-lg text-sm ${
+                            item.quantity > item.product.stock
+                              ? "border-red-400"
+                              : "border-gray-300"
+                          }`}
                         />
                       </div>
 
@@ -146,7 +156,7 @@ export default function CartPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:sticky lg:top-24">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:sticky lg:top-32">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Ringkasan Pesanan</h2>
 
                 <div className="space-y-3 mb-6">
@@ -173,12 +183,19 @@ export default function CartPage() {
                 </button>
 
                 <button
+                  onClick={() => router.push("/produk")}
+                  className="w-full py-2 text-brand-600 hover:text-brand-700 transition-colors text-sm font-medium"
+                >
+                  ← Lanjut Belanja
+                </button>
+
+                <button
                   onClick={() => {
                     if (confirm("Hapus semua item dari keranjang?")) {
                       clearCart();
                     }
                   }}
-                  className="w-full py-3 text-gray-600 hover:text-red-600 transition-colors text-sm"
+                  className="w-full py-2 text-gray-500 hover:text-red-600 transition-colors text-xs"
                 >
                   Kosongkan Keranjang
                 </button>

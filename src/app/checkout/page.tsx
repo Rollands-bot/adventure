@@ -205,12 +205,14 @@ ${selectedFile ? "✅ Saya sudah upload bukti transfer" : "⏳ Saya akan transfe
 Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!${adminQuickActions}`;
 
       const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`;
-      
+
       // Open WhatsApp
       window.open(waUrl, "_blank");
-      
-      // Redirect to success page or dashboard
-      router.push("/dashboard");
+
+      // Redirect to success page with order details
+      router.push(
+        `/checkout/success?orderId=${encodeURIComponent(order.id)}&total=${totalPrice}`,
+      );
       
     } catch (err: any) {
       console.error("Checkout error:", err);
@@ -224,7 +226,7 @@ Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!${adminQuick
     return (
       <main className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[60vh] pt-24">
+        <div className="flex items-center justify-center min-h-[60vh] pt-28 md:pt-32">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
         </div>
         <Footer />
@@ -235,7 +237,7 @@ Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!${adminQuick
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
-      <section className="section-padding pt-24">
+      <section className="section-padding pt-28 md:pt-32">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
 

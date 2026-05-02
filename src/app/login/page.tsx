@@ -40,7 +40,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="flex items-center justify-center px-4 pt-24 pb-12">
+      <div className="flex items-center justify-center px-4 pt-28 md:pt-32 pb-12">
         <AuthCard
           title="Selamat Datang Kembali"
           subtitle="Masuk untuk melanjutkan petualangan Anda"

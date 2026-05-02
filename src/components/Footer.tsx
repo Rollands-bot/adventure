@@ -20,10 +20,10 @@ const Footer = () => {
       { href: "/kontak", label: "Kontak" },
     ],
     sosial: [
-      { href: "#", label: "Instagram", icon: "instagram" },
-      { href: "#", label: "Facebook", icon: "facebook" },
-      { href: "#", label: "Twitter", icon: "twitter" },
-      { href: "#", label: "WhatsApp", icon: "whatsapp" },
+      { href: "https://instagram.com/ruangaktifadventure", label: "Instagram", icon: "instagram" },
+      { href: "https://facebook.com/ruangaktifadventure", label: "Facebook", icon: "facebook" },
+      { href: "https://twitter.com/ruangaktif", label: "Twitter", icon: "twitter" },
+      { href: "https://wa.me/6285129966730", label: "WhatsApp", icon: "whatsapp" },
     ],
   };
 
@@ -75,6 +75,8 @@ const Footer = () => {
                 <a
                   key={link.label}
                   href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-10 h-10 bg-gray-800 hover:bg-brand-600 rounded-full flex items-center justify-center transition-colors"
                   aria-label={link.label}
                 >
@@ -152,10 +154,10 @@ const Footer = () => {
               © {currentYear} Ruang Aktif Adventure. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Terms of Service
               </Link>
             </div>

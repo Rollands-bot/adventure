@@ -134,7 +134,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
-      <section className="section-padding pt-24">
+      <section className="section-padding pt-28 md:pt-32">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
