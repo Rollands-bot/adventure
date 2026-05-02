@@ -8,18 +8,27 @@ import Navbar from "@/components/Navbar";
 export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [nextPath, setNextPath] = useState<string | null>(null);
   const { signInWithGoogle } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errParam = params.get("error");
+    // Accept both `next` (cart/checkout flow) and `redirect` (admin
+    // middleware) so post-login lands on the originally-requested page.
+    const next = params.get("next") || params.get("redirect");
+    if (next && next.startsWith("/")) {
+      setNextPath(next);
+    }
     if (errParam) {
       setError(
         errParam === "exchange"
           ? "Link verifikasi tidak valid atau sudah kedaluwarsa."
           : "Terjadi kesalahan saat login. Silakan coba lagi.",
       );
-      window.history.replaceState({}, "", "/login");
+      // Preserve next on URL cleanup
+      const cleanUrl = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
+      window.history.replaceState({}, "", cleanUrl);
     }
   }, []);
 
@@ -28,7 +37,7 @@ export default function LoginPage() {
     setError("");
     setIsGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle(nextPath ?? undefined);
       if (error) throw error;
       // Browser will navigate to Google; loading stays true until then.
     } catch (err: any) {

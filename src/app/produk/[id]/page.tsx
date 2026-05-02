@@ -69,9 +69,11 @@ export default function ProductDetailPage() {
     };
   }, [params]);
 
-  const stock = product?.stock ?? 0;
-  const isOutOfStock = stock <= 0;
-  const overStock = quantity > stock;
+  const rawStock = product?.stock;
+  const hasStockNumber = typeof rawStock === "number";
+  const isOutOfStock = hasStockNumber && rawStock <= 0;
+  const overStock =
+    hasStockNumber && rawStock > 0 && quantity > rawStock;
   const total = product
     ? product.price_per_day * quantity * rentalDays
     : 0;
@@ -220,7 +222,7 @@ export default function ProductDetailPage() {
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-medium ${
                     isOutOfStock
                       ? "bg-red-100 text-red-700"
-                      : stock <= 3
+                      : hasStockNumber && rawStock <= 3
                       ? "bg-yellow-100 text-yellow-700"
                       : "bg-green-100 text-green-700"
                   }`}
@@ -228,9 +230,11 @@ export default function ProductDetailPage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-current" />
                   {isOutOfStock
                     ? "Stok habis"
-                    : stock <= 3
-                    ? `Stok terbatas (${stock} unit)`
-                    : `Tersedia (${stock} unit)`}
+                    : hasStockNumber && rawStock <= 3
+                    ? `Stok terbatas (${rawStock} unit)`
+                    : hasStockNumber
+                    ? `Tersedia (${rawStock} unit)`
+                    : "Tersedia"}
                 </span>
               </div>
 
@@ -246,7 +250,7 @@ export default function ProductDetailPage() {
                     <input
                       type="number"
                       min={1}
-                      max={stock}
+                      max={hasStockNumber && rawStock > 0 ? rawStock : undefined}
                       value={quantity}
                       onChange={(e) =>
                         setQuantity(Math.max(1, parseInt(e.target.value) || 1))
@@ -288,7 +292,7 @@ export default function ProductDetailPage() {
 
                 {overStock && (
                   <p className="text-xs text-red-600">
-                    Maksimal {stock} unit yang bisa lo sewa.
+                    Maksimal {rawStock} unit yang bisa lo sewa.
                   </p>
                 )}
 

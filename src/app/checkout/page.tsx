@@ -33,7 +33,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      router.replace("/login");
+      router.replace(`/login?next=${encodeURIComponent("/checkout")}`);
       return;
     }
     if (items.length === 0) {

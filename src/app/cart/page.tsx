@@ -16,9 +16,7 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     if (!user) {
-      // Save current URL to redirect back after login
-      localStorage.setItem("redirectAfterLogin", "/checkout");
-      router.push("/login");
+      router.push(`/login?next=${encodeURIComponent("/checkout")}`);
       return;
     }
     router.push("/checkout");

@@ -32,9 +32,14 @@ const ProductCard = ({
   const [rentalDays, setRentalDays] = useState(1);
   const [startDate, setStartDate] = useState("");
 
-  const stock = product?.stock ?? 0;
-  const isOutOfStock = stock <= 0;
-  const overStock = quantity > stock;
+  // stock can be number | null | undefined. Only treat explicit 0 as
+  // "out of stock"; null/undefined means "stock data missing" so don't
+  // block the button.
+  const rawStock = product?.stock;
+  const hasStockNumber = typeof rawStock === "number";
+  const isOutOfStock = hasStockNumber && rawStock <= 0;
+  const overStock =
+    hasStockNumber && rawStock > 0 && quantity > rawStock;
   const detailHref = product ? `/produk/${product.id}` : null;
 
   const openModal = () => {
@@ -46,8 +51,7 @@ const ProductCard = ({
   };
 
   const handleAddToCart = () => {
-    if (!product) return;
-    if (overStock || isOutOfStock) return;
+    if (!product || isOutOfStock || overStock) return;
 
     const today = new Date().toISOString().split("T")[0];
     addToCart(product, quantity, rentalDays, startDate || today);
@@ -207,9 +211,12 @@ const ProductCard = ({
                 <p className="text-brand-600 font-bold">
                   Rp{price.toLocaleString("id-ID")}/hari
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Stok tersedia: <span className="font-medium text-gray-700">{stock}</span>
-                </p>
+                {hasStockNumber && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Stok tersedia:{" "}
+                    <span className="font-medium text-gray-700">{rawStock}</span>
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -233,7 +240,7 @@ const ProductCard = ({
                   <input
                     type="number"
                     min={1}
-                    max={stock}
+                    max={hasStockNumber && rawStock > 0 ? rawStock : undefined}
                     value={quantity}
                     onChange={(e) =>
                       setQuantity(Math.max(1, parseInt(e.target.value) || 1))
@@ -244,7 +251,7 @@ const ProductCard = ({
                   />
                   {overStock && (
                     <p className="text-xs text-red-600 mt-1">
-                      Maksimal {stock} unit tersedia
+                      Maksimal {rawStock} unit tersedia
                     </p>
                   )}
                 </div>
