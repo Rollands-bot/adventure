@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import Image from "next/image";
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, hydrated: cartHydrated, totalPrice, clearCart } = useCart();
   const { user, profile, loading: authLoading, supabase } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,9 +29,11 @@ export default function CheckoutPage() {
 
   const [error, setError] = useState("");
 
-  // Redirect based on auth/cart state (side effects belong in useEffect, not render)
+  // Redirect based on auth/cart state. Wait for cart hydration before
+  // bouncing on empty cart, otherwise an unlogged user who refreshed
+  // mid-flow gets sent to /produk before localStorage finishes loading.
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !cartHydrated) return;
     if (!user) {
       router.replace(`/login?next=${encodeURIComponent("/checkout")}`);
       return;
@@ -39,7 +41,7 @@ export default function CheckoutPage() {
     if (items.length === 0) {
       router.replace("/produk");
     }
-  }, [authLoading, user, items.length, router]);
+  }, [authLoading, cartHydrated, user, items.length, router]);
 
   // Sync form defaults once profile loads
   useEffect(() => {
@@ -80,11 +82,39 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (!user || processing) return;
     setError("");
+
+    // Explicit field validation — `required` alone can be bypassed.
+    if (!formData.fullName.trim()) {
+      setError("Nama lengkap wajib diisi");
+      return;
+    }
+    if (!formData.email.trim()) {
+      setError("Email wajib diisi");
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setError("Nomor WhatsApp wajib diisi");
+      return;
+    }
+    if (!formData.startDate) {
+      setError("Tanggal mulai sewa wajib diisi");
+      return;
+    }
+    const startDate = new Date(formData.startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (Number.isNaN(startDate.getTime()) || startDate < today) {
+      setError("Tanggal mulai sewa tidak boleh di masa lalu");
+      return;
+    }
+    if (!Number.isFinite(formData.rentalDays) || formData.rentalDays < 1) {
+      setError("Durasi sewa minimal 1 hari");
+      return;
+    }
+
     setProcessing(true);
 
     try {
-      // Calculate dates
-      const startDate = new Date(formData.startDate);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + formData.rentalDays);
 

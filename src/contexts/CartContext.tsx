@@ -21,6 +21,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
+  hydrated: boolean;
   addToCart: (
     product: Product,
     quantity: number,
@@ -138,16 +139,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("cart");
   };
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalItems = items.reduce(
+    (sum, item) => sum + (Number.isFinite(item.quantity) ? item.quantity : 0),
+    0,
+  );
 
   const totalPrice = items.reduce((sum, item) => {
-    return (
-      sum + item.product.price_per_day * item.quantity * item.rental_days
-    );
+    const price = item.product?.price_per_day ?? 0;
+    const qty = Number.isFinite(item.quantity) ? item.quantity : 0;
+    const days = Number.isFinite(item.rental_days) ? item.rental_days : 0;
+    return sum + price * qty * days;
   }, 0);
 
   const value = {
     items,
+    hydrated,
     addToCart,
     removeFromCart,
     updateQuantity,

@@ -15,9 +15,10 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     const errParam = params.get("error");
     // Accept both `next` (cart/checkout flow) and `redirect` (admin
-    // middleware) so post-login lands on the originally-requested page.
+    // middleware). Require a single leading slash to block protocol-
+    // relative URLs like //evil.com.
     const next = params.get("next") || params.get("redirect");
-    if (next && next.startsWith("/")) {
+    if (next && /^\/[^/]/.test(next)) {
       setNextPath(next);
     }
     if (errParam) {

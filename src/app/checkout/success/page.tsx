@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -8,6 +8,24 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-gray-50">
+          <Navbar />
+          <div className="flex items-center justify-center min-h-[60vh] pt-28">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600" />
+          </div>
+          <Footer />
+        </main>
+      }
+    >
+      <SuccessContent />
+    </Suspense>
+  );
+}
+
+function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId") ?? "";
   const total = searchParams.get("total") ?? "";

@@ -1,10 +1,16 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Only allow same-origin redirects, single leading slash. Rejects
+// "//evil.com", "https://evil.com", and anything not starting with "/".
+const isSafeNext = (value: string | null): value is string =>
+  !!value && /^\/[^/]/.test(value);
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next");
+  const rawNext = searchParams.get("next");
+  const next = isSafeNext(rawNext) ? rawNext : null;
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=missing_code", origin));
@@ -37,26 +43,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=exchange", origin));
   }
 
-  // Caller can override destination via ?next=...
-  let destination = next ?? "/produk";
-
-  // Otherwise route by role: super_admin / staff -> /admin, everyone
-  // else -> /produk (so a freshly signed-in user lands on the catalog).
-  if (!next) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      const role = (profile as { role?: string } | null)?.role;
-      destination =
-        role === "super_admin" || role === "staff" ? "/admin" : "/produk";
-    }
+  // Resolve role first so we can guard `next` against admin pages.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let role: string | undefined;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    role = (profile as { role?: string } | null)?.role;
   }
+  const isAdmin = role === "super_admin" || role === "staff";
+
+  // If caller asked for /admin but the user isn't admin, drop the next
+  // hint to avoid the middleware bouncing them right back to /login.
+  const safeNext =
+    next && next.startsWith("/admin") && !isAdmin ? null : next;
+
+  const destination =
+    safeNext ?? (isAdmin ? "/admin" : "/produk");
 
   // Rebuild response at final destination, preserving cookies set above.
   const finalResponse = NextResponse.redirect(new URL(destination, origin));

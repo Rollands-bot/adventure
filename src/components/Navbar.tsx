@@ -217,7 +217,10 @@ const Navbar = () => {
               <div className="hidden md:block relative" ref={avatarRef}>
                 <button
                   type="button"
-                  onClick={() => setIsAvatarOpen((o) => !o)}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsAvatarOpen((o) => !o);
+                  }}
                   aria-haspopup="menu"
                   aria-expanded={isAvatarOpen}
                   aria-label="Buka menu user"
@@ -299,7 +302,10 @@ const Navbar = () => {
             {!loading && user ? (
               <button
                 type="button"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => {
+                  setIsAvatarOpen(false);
+                  setIsMobileMenuOpen((o) => !o);
+                }}
                 className="md:hidden flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500/40 ring-offset-2 transition-all hover:ring-2 hover:ring-brand-200"
                 aria-label="Buka menu user"
                 aria-expanded={isMobileMenuOpen}
@@ -310,7 +316,10 @@ const Navbar = () => {
             ) : (
               <button
                 type="button"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => {
+                  setIsAvatarOpen(false);
+                  setIsMobileMenuOpen((o) => !o);
+                }}
                 className="md:hidden p-2 rounded-lg text-gray-900"
                 aria-label="Toggle menu"
                 aria-expanded={isMobileMenuOpen}
