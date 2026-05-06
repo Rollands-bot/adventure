@@ -260,7 +260,7 @@ export default function ProductDetailPage() {
                       min={1}
                       max={hasStockNumber && rawStock > 0 ? rawStock : undefined}
                       value={quantity}
-                      placeholder="1"
+                      placeholder="0"
                       onChange={(e) => setQuantity(e.target.value)}
                       disabled={isOutOfStock}
                       className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none disabled:bg-gray-50 disabled:cursor-not-allowed ${
@@ -277,7 +277,7 @@ export default function ProductDetailPage() {
                       inputMode="numeric"
                       min={1}
                       value={rentalDays}
-                      placeholder="1"
+                      placeholder="0"
                       onChange={(e) => setRentalDays(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none"
                     />

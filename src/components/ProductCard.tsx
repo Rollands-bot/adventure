@@ -247,7 +247,7 @@ const ProductCard = ({
                     min={1}
                     max={hasStockNumber && rawStock > 0 ? rawStock : undefined}
                     value={quantity}
-                    placeholder="1"
+                    placeholder="0"
                     onChange={(e) => setQuantity(e.target.value)}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       overStock ? "border-red-400" : "border-gray-300"
@@ -269,7 +269,7 @@ const ProductCard = ({
                     inputMode="numeric"
                     min="1"
                     value={rentalDays}
-                    placeholder="1"
+                    placeholder="0"
                     onChange={(e) => setRentalDays(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
