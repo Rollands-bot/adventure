@@ -550,13 +550,19 @@ export default function AdminProducts() {
                       Harga per Hari (Rp)
                     </label>
                     <input
-                      type="number"
-                      value={formData.price_per_day}
-                      onChange={(e) =>
-                        setFormData({ ...formData, price_per_day: e.target.value })
+                      type="text"
+                      inputMode="numeric"
+                      value={
+                        formData.price_per_day
+                          ? Number(formData.price_per_day).toLocaleString("id-ID")
+                          : ""
                       }
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/\D/g, "");
+                        setFormData({ ...formData, price_per_day: digitsOnly });
+                      }}
                       required
-                      min="0"
+                      placeholder="0"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     />
                   </div>
