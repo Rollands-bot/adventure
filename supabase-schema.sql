@@ -473,3 +473,16 @@ INSERT INTO products (name, description, price_per_day, category, stock, image_u
   ('Matras Camping', 'Matras busa tebal untuk kenyamanan tidur', 20000, 'Alas', 30, 'https://images.unsplash.com/photo-1595341888016-a392ef81b7de?auto=format&fit=crop&w=800&q=80', 4.4, true),
   ('Headlamp LED', 'Lampu kepala LED super terang', 15000, 'Lampu', 40, 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80', 4.6, true),
   ('Trekking Pole', 'Tongkat hiking adjustable dan ringan', 30000, 'Aksesoris', 20, 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=800&q=80', 4.5, true);
+
+-- ============================================
+-- DATA NORMALIZATION
+-- ============================================
+
+-- Some products were entered with prices in thousands of rupiah
+-- (e.g. 25 instead of 25000). Multiply any sub-1000 price by 1000 so
+-- they format correctly via toLocaleString("id-ID"). Idempotent: safe
+-- to re-run; only touches rows whose price is still implausibly low.
+UPDATE products
+SET price_per_day = price_per_day * 1000
+WHERE price_per_day > 0
+  AND price_per_day < 1000;
