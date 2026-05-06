@@ -5,9 +5,26 @@ import { join } from "path";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
+const detectMime = (buf: Buffer): string => {
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (
+    buf.length >= 8 &&
+    buf[0] === 0x89 &&
+    buf[1] === 0x50 &&
+    buf[2] === 0x4e &&
+    buf[3] === 0x47
+  ) {
+    return "image/png";
+  }
+  return "image/png";
+};
+
 export default function AppleIcon() {
   const logo = readFileSync(join(process.cwd(), "public", "logo.png"));
-  const dataUrl = `data:image/png;base64,${logo.toString("base64")}`;
+  const mime = detectMime(logo);
+  const dataUrl = `data:${mime};base64,${logo.toString("base64")}`;
 
   return new ImageResponse(
     (
@@ -28,7 +45,7 @@ export default function AppleIcon() {
           src={dataUrl}
           width={180}
           height={180}
-          style={{ objectFit: "cover", borderRadius: "50%" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </div>
     ),
