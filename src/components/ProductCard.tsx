@@ -28,24 +28,26 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const { addToCart, showFlash } = useCart();
   const [showModal, setShowModal] = useState(false);
-  const [quantity, setQuantity] = useState(1);
-  const [rentalDays, setRentalDays] = useState(1);
+  // Inputs are kept as strings so the user can clear & retype freely;
+  // numeric coercion happens at submit time.
+  const [quantity, setQuantity] = useState("");
+  const [rentalDays, setRentalDays] = useState("");
   const [startDate, setStartDate] = useState("");
 
-  // stock can be number | null | undefined. Only treat explicit 0 as
-  // "out of stock"; null/undefined means "stock data missing" so don't
-  // block the button.
+  const quantityNum = parseInt(quantity, 10) || 0;
+  const rentalDaysNum = parseInt(rentalDays, 10) || 0;
+
   const rawStock = product?.stock;
   const hasStockNumber = typeof rawStock === "number";
   const isOutOfStock = hasStockNumber && rawStock <= 0;
   const overStock =
-    hasStockNumber && rawStock > 0 && quantity > rawStock;
+    hasStockNumber && rawStock > 0 && quantityNum > rawStock;
   const detailHref = product ? `/produk/${product.id}` : null;
 
   const openModal = () => {
     if (!product || isOutOfStock) return;
-    setQuantity(1);
-    setRentalDays(1);
+    setQuantity("");
+    setRentalDays("");
     setStartDate("");
     setShowModal(true);
   };
@@ -53,8 +55,10 @@ const ProductCard = ({
   const handleAddToCart = () => {
     if (!product || isOutOfStock || overStock) return;
 
+    const finalQty = quantityNum > 0 ? quantityNum : 1;
+    const finalDays = rentalDaysNum > 0 ? rentalDaysNum : 1;
     const today = new Date().toISOString().split("T")[0];
-    addToCart(product, quantity, rentalDays, startDate || today);
+    addToCart(product, finalQty, finalDays, startDate || today);
     showFlash(`${product.name} ditambahkan ke keranjang`);
     setShowModal(false);
   };
@@ -239,12 +243,12 @@ const ProductCard = ({
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     max={hasStockNumber && rawStock > 0 ? rawStock : undefined}
                     value={quantity}
-                    onChange={(e) =>
-                      setQuantity(Math.max(1, parseInt(e.target.value) || 1))
-                    }
+                    placeholder="1"
+                    onChange={(e) => setQuantity(e.target.value)}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       overStock ? "border-red-400" : "border-gray-300"
                     }`}
@@ -262,11 +266,11 @@ const ProductCard = ({
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min="1"
                     value={rentalDays}
-                    onChange={(e) =>
-                      setRentalDays(Math.max(1, parseInt(e.target.value) || 1))
-                    }
+                    placeholder="1"
+                    onChange={(e) => setRentalDays(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
@@ -278,16 +282,16 @@ const ProductCard = ({
                   </div>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Jumlah</span>
-                    <span>× {quantity}</span>
+                    <span>× {quantityNum}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Durasi</span>
-                    <span>× {rentalDays} hari</span>
+                    <span>× {rentalDaysNum} hari</span>
                   </div>
                   <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
                     <span>Total</span>
                     <span className="text-brand-600">
-                      Rp{(price * quantity * rentalDays).toLocaleString("id-ID")}
+                      Rp{(price * quantityNum * rentalDaysNum).toLocaleString("id-ID")}
                     </span>
                   </div>
                 </div>

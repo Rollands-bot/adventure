@@ -22,9 +22,12 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [quantity, setQuantity] = useState(1);
-  const [rentalDays, setRentalDays] = useState(1);
+  const [quantity, setQuantity] = useState("");
+  const [rentalDays, setRentalDays] = useState("");
   const [startDate, setStartDate] = useState("");
+
+  const quantityNum = parseInt(quantity, 10) || 0;
+  const rentalDaysNum = parseInt(rentalDays, 10) || 0;
 
   useEffect(() => {
     const id = params?.id;
@@ -73,22 +76,26 @@ export default function ProductDetailPage() {
   const hasStockNumber = typeof rawStock === "number";
   const isOutOfStock = hasStockNumber && rawStock <= 0;
   const overStock =
-    hasStockNumber && rawStock > 0 && quantity > rawStock;
+    hasStockNumber && rawStock > 0 && quantityNum > rawStock;
   const total = product
-    ? product.price_per_day * quantity * rentalDays
+    ? product.price_per_day * quantityNum * rentalDaysNum
     : 0;
 
   const handleAddToCart = () => {
     if (!product || overStock || isOutOfStock) return;
+    const finalQty = quantityNum > 0 ? quantityNum : 1;
+    const finalDays = rentalDaysNum > 0 ? rentalDaysNum : 1;
     const today = new Date().toISOString().split("T")[0];
-    addToCart(product, quantity, rentalDays, startDate || today);
+    addToCart(product, finalQty, finalDays, startDate || today);
     showFlash(`${product.name} ditambahkan ke keranjang`);
   };
 
   const handleBuyNow = () => {
     if (!product || overStock || isOutOfStock) return;
+    const finalQty = quantityNum > 0 ? quantityNum : 1;
+    const finalDays = rentalDaysNum > 0 ? rentalDaysNum : 1;
     const today = new Date().toISOString().split("T")[0];
-    addToCart(product, quantity, rentalDays, startDate || today);
+    addToCart(product, finalQty, finalDays, startDate || today);
     router.push("/checkout");
   };
 
@@ -249,12 +256,12 @@ export default function ProductDetailPage() {
                     </label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       max={hasStockNumber && rawStock > 0 ? rawStock : undefined}
                       value={quantity}
-                      onChange={(e) =>
-                        setQuantity(Math.max(1, parseInt(e.target.value) || 1))
-                      }
+                      placeholder="1"
+                      onChange={(e) => setQuantity(e.target.value)}
                       disabled={isOutOfStock}
                       className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none disabled:bg-gray-50 disabled:cursor-not-allowed ${
                         overStock ? "border-red-400" : "border-gray-300"
@@ -267,11 +274,11 @@ export default function ProductDetailPage() {
                     </label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       value={rentalDays}
-                      onChange={(e) =>
-                        setRentalDays(Math.max(1, parseInt(e.target.value) || 1))
-                      }
+                      placeholder="1"
+                      onChange={(e) => setRentalDays(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none"
                     />
                   </div>
