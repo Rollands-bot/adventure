@@ -6,6 +6,10 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 
 const ADMIN_PHONE = "6285129966730";
+const MAPS_URL = "https://maps.app.goo.gl/iTUe8Wqyuf2oB3bg8?g_st=iw";
+const MAPS_EMBED_QUERY = encodeURIComponent(
+  "Jl. Raya Serang No.Km.10 15810 Curug Banten",
+);
 
 const Kontak = () => {
   const [formData, setFormData] = useState({
@@ -96,25 +100,48 @@ ${formData.message}`;
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {contactInfo.map((item) => (
-              <div
-                key={item.title}
-                className="card p-6 text-center hover:shadow-xl transition-shadow"
-              >
-                <div className="w-14 h-14 bg-brand-600/10 rounded-full flex items-center justify-center mx-auto mb-4 text-brand-600">
-                  {item.icon}
+            {contactInfo.map((item) => {
+              const isAddress = item.title === "Alamat";
+              const cardInner = (
+                <>
+                  <div className="w-14 h-14 bg-brand-600/10 rounded-full flex items-center justify-center mx-auto mb-4 text-brand-600">
+                    {item.icon}
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-gray-600 text-sm">{item.content}</p>
+                  {isAddress && (
+                    <p className="text-brand-600 text-xs font-medium mt-2">
+                      Buka di Google Maps →
+                    </p>
+                  )}
+                </>
+              );
+              return isAddress ? (
+                <a
+                  key={item.title}
+                  href={MAPS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="card p-6 text-center hover:shadow-xl transition-shadow block"
+                >
+                  {cardInner}
+                </a>
+              ) : (
+                <div
+                  key={item.title}
+                  className="card p-6 text-center hover:shadow-xl transition-shadow"
+                >
+                  {cardInner}
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-600 text-sm">{item.content}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="card overflow-hidden">
+            <div className="card overflow-hidden flex flex-col">
               <div className="h-96 w-full">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.666427009761!2d106.500!3d-6.175!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwMTAnMzAuMCJTIDEwNsKwMzAnMDAuMCJF!5e0!3m2!1sen!2sid!4v1234567890"
+                  src={`https://www.google.com/maps?q=${MAPS_EMBED_QUERY}&output=embed`}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -124,6 +151,14 @@ ${formData.message}`;
                   className="w-full h-full"
                 />
               </div>
+              <a
+                href={MAPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-3 text-center text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors border-t border-gray-100"
+              >
+                Buka di Google Maps →
+              </a>
             </div>
 
             <div className="card p-8">
