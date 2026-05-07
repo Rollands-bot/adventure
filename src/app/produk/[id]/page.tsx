@@ -151,15 +151,16 @@ export default function ProductDetailPage() {
             <span className="text-gray-900 truncate">{product.name}</span>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* Image */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+            {/* Image — capped height on mobile so the form is reachable
+                without endless scrolling, full square on desktop */}
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
               className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200"
             >
-              <div className="relative w-full aspect-square">
+              <div className="relative w-full h-64 sm:h-80 lg:h-auto lg:aspect-square">
                 <Image
                   src={product.image_url}
                   alt={product.name}
