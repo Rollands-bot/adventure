@@ -366,7 +366,9 @@ Mohon konfirmasi ketersediaan dan validasi pembayaran. Terima kasih!${adminQuick
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       required
                       min={new Date().toISOString().split("T")[0]}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        formData.startDate ? "text-gray-900" : "text-transparent"
+                      }`}
                     />
                     {!formData.startDate && (
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center gap-1.5">
