@@ -38,6 +38,7 @@ export default function RegisterPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [success, setSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -46,6 +47,25 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const { signInWithMagicLink, supabase } = useAuth();
+
+  // Prefill email + show notice when the auth callback bounces an
+  // unregistered Google sign-in here.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get("email");
+    const errParam = params.get("error");
+    if (emailParam) {
+      setFormData((prev) => ({ ...prev, email: emailParam }));
+    }
+    if (errParam === "not_registered") {
+      setNotice(
+        "Akun Google ini belum terdaftar. Lengkapi data di bawah untuk membuat akun.",
+      );
+    }
+    if (emailParam || errParam) {
+      window.history.replaceState({}, "", "/register");
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -198,6 +218,17 @@ export default function RegisterPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+          {notice && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="text-amber-700 text-sm">{notice}</div>
+              </div>
+            </div>
+          )}
+
           {/* Full Name Input */}
           <div>
             <label
