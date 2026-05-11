@@ -77,6 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(session);
       setUser(session?.user ?? null);
+      // Resolve the loading gate as soon as we know the session state.
+      // Profile hydrates in the background; without this the navbar
+      // hangs blank for up to PROFILE_FETCH_TIMEOUT_MS whenever the
+      // profile query is slow or returns nothing.
+      setLoading(false);
 
       if (session?.user) {
         const profileData = await fetchProfileWithTimeout(session.user.id);
@@ -84,8 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
       }
-
-      if (isMounted) setLoading(false);
     });
 
     return () => {

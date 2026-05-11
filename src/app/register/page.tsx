@@ -29,7 +29,31 @@ const getEmailProvider = (email: string) => {
 
 const RESEND_COOLDOWN_SEC = 60;
 
+// Drop any stored supabase auth token before React even hydrates the
+// page. Runs during component construction (before AuthContext's
+// useEffect subscribes to onAuthStateChange), so the navbar never sees
+// a session for the just-deleted Google user — Login/Register shows
+// immediately instead of waiting for client-side signOut to settle.
+const clearStaleSupabaseToken = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") !== "not_registered") return;
+    Object.keys(window.localStorage)
+      .filter((k) => k.startsWith("sb-") && k.includes("auth-token"))
+      .forEach((k) => window.localStorage.removeItem(k));
+  } catch {
+    // Some browsers block localStorage access (private mode, blocked
+    // storage). The server already cleared cookies, so signOut() in
+    // the useEffect below is still a safety net.
+  }
+};
+
 export default function RegisterPage() {
+  const [didClearToken] = useState(() => {
+    clearStaleSupabaseToken();
+    return true;
+  });
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
