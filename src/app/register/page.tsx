@@ -49,7 +49,10 @@ export default function RegisterPage() {
   const { signInWithMagicLink, supabase } = useAuth();
 
   // Prefill email + show notice when the auth callback bounces an
-  // unregistered Google sign-in here.
+  // unregistered Google sign-in here. The server already deleted the
+  // auth user + cleared cookies, but the browser supabase-js client
+  // still has the session in localStorage — sign out client-side too so
+  // the navbar and AuthContext drop the avatar/state.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const emailParam = params.get("email");
@@ -61,11 +64,15 @@ export default function RegisterPage() {
       setNotice(
         "Akun Google ini belum terdaftar. Lengkapi data di bawah untuk membuat akun.",
       );
+      supabase.auth.signOut().catch(() => {
+        // The auth row was already deleted server-side, so a 404 here is
+        // expected — we only care that localStorage gets wiped.
+      });
     }
     if (emailParam || errParam) {
       window.history.replaceState({}, "", "/register");
     }
-  }, []);
+  }, [supabase]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
