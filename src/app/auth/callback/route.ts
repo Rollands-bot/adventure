@@ -82,15 +82,34 @@ export async function GET(request: NextRequest) {
       // Cascades through FK to delete the just-created profile row too.
       await admin.auth.admin.deleteUser(user.id);
     }
-    await supabase.auth.signOut();
+
     const email = user.email ? `&email=${encodeURIComponent(user.email)}` : "";
     const rejectResponse = NextResponse.redirect(
       new URL(`/register?error=not_registered${email}`, origin),
     );
-    // Carry the cleared auth cookies so the browser drops the session.
-    response.cookies.getAll().forEach((c) => {
-      rejectResponse.cookies.set(c);
+
+    // The browser-side client (createBrowserClient from @supabase/ssr)
+    // reads its session from cookies, not localStorage. Explicitly
+    // expire every sb-* cookie — both ones the request brought in and
+    // ones exchangeCodeForSession just set on `response` — so the
+    // navbar on /register doesn't briefly show the deleted user's
+    // avatar.
+    const sbCookieNames = new Set<string>();
+    request.cookies.getAll().forEach((c) => {
+      if (c.name.startsWith("sb-")) sbCookieNames.add(c.name);
     });
+    response.cookies.getAll().forEach((c) => {
+      if (c.name.startsWith("sb-")) sbCookieNames.add(c.name);
+    });
+    sbCookieNames.forEach((name) => {
+      rejectResponse.cookies.set({
+        name,
+        value: "",
+        maxAge: 0,
+        path: "/",
+      });
+    });
+
     return rejectResponse;
   }
 
