@@ -1,15 +1,8 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 const isSafeNext = (value: string | null): value is string =>
   !!value && /^\/[^/]/.test(value);
-
-// A user is treated as "not registered" if their auth row was created
-// within this window AND their profile has no phone — the register form
-// always collects a phone, so a phoneless fresh row means they came in
-// via Google OAuth without going through /register.
-const FRESH_SIGNUP_WINDOW_MS = 5 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -62,55 +55,19 @@ export async function GET(request: NextRequest) {
     profilePhone = (profile as { phone?: string | null } | null)?.phone;
   }
 
-  // Block Google OAuth users who never went through /register. A row
-  // freshly created via OAuth has no phone (the trigger only fills phone
-  // when raw_user_meta_data.phone is set, which the register magic-link
-  // flow provides). We bound this to a small time window so older users
-  // who happen to have NULL phone aren't kicked out.
-  const createdAtMs = user?.created_at ? new Date(user.created_at).getTime() : 0;
-  const isFresh = createdAtMs > 0 && Date.now() - createdAtMs < FRESH_SIGNUP_WINDOW_MS;
-  const isUnregisteredOAuth = user && isFresh && !profilePhone && role === "user";
-
-  if (isUnregisteredOAuth) {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (serviceKey) {
-      const admin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        serviceKey,
-        { auth: { persistSession: false, autoRefreshToken: false } },
-      );
-      // Cascades through FK to delete the just-created profile row too.
-      await admin.auth.admin.deleteUser(user.id);
-    }
-
-    const email = user.email ? `&email=${encodeURIComponent(user.email)}` : "";
-    const rejectResponse = NextResponse.redirect(
-      new URL(`/register?error=not_registered${email}`, origin),
+  // Google OAuth signups don't carry a phone number, and the register
+  // form requires one. Funnel anyone whose profile is missing a phone
+  // through /complete-profile so they finish setup before we drop them
+  // into the regular destination.
+  if (user && !profilePhone) {
+    const nextParam = next ? `?next=${encodeURIComponent(next)}` : "";
+    const finalResponse = NextResponse.redirect(
+      new URL(`/complete-profile${nextParam}`, origin),
     );
-
-    // The browser-side client (createBrowserClient from @supabase/ssr)
-    // reads its session from cookies, not localStorage. Explicitly
-    // expire every sb-* cookie — both ones the request brought in and
-    // ones exchangeCodeForSession just set on `response` — so the
-    // navbar on /register doesn't briefly show the deleted user's
-    // avatar.
-    const sbCookieNames = new Set<string>();
-    request.cookies.getAll().forEach((c) => {
-      if (c.name.startsWith("sb-")) sbCookieNames.add(c.name);
-    });
     response.cookies.getAll().forEach((c) => {
-      if (c.name.startsWith("sb-")) sbCookieNames.add(c.name);
+      finalResponse.cookies.set(c);
     });
-    sbCookieNames.forEach((name) => {
-      rejectResponse.cookies.set({
-        name,
-        value: "",
-        maxAge: 0,
-        path: "/",
-      });
-    });
-
-    return rejectResponse;
+    return finalResponse;
   }
 
   const isAdmin = role === "super_admin" || role === "staff";
