@@ -27,34 +27,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const PROFILE_FETCH_TIMEOUT_MS = 5000;
-
-const fetchProfileWithTimeout = async (
-  userId: string,
-): Promise<UserProfile | null> => {
+// Profile is fetched via /api/me (server-side, service role) instead of
+// a direct supabase-js query. The browser-side query against `profiles`
+// has been seen to hang on supabase-js lock contention, which left
+// admins with profile=null → isAdmin=false → "Dashboard" instead of
+// "Admin Panel" in the navbar.
+const fetchProfile = async (): Promise<UserProfile | null> => {
   try {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Profile fetch timeout")),
-        PROFILE_FETCH_TIMEOUT_MS,
-      ),
-    );
-
-    const query = supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    const { data, error } = await Promise.race([query, timeout]);
-    if (error) throw error;
-    return data as UserProfile;
-  } catch (error: any) {
-    if (error?.message?.includes("Lock") || error?.message?.includes("timeout")) {
-      console.warn("Profile fetch skipped:", error.message);
-    } else {
-      console.error("Error fetching profile:", error);
-    }
+    const res = await fetch("/api/me", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { profile: UserProfile | null };
+    return body.profile ?? null;
+  } catch (error) {
+    console.error("Error fetching profile:", error);
     return null;
   }
 };
@@ -84,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       if (session?.user) {
-        const profileData = await fetchProfileWithTimeout(session.user.id);
+        const profileData = await fetchProfile();
         if (isMounted) setProfile(profileData);
       } else {
         setProfile(null);
