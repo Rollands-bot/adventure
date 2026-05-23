@@ -2,6 +2,8 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 // Returns the authenticated user's profile by reading their session
 // from cookies and then fetching via service role. We do this server-
 // side because the browser-side query against `profiles` has been
