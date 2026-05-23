@@ -12,7 +12,7 @@ const isSafeNext = (value: string | null): value is string =>
 
 export default function CompleteProfilePage() {
   const router = useRouter();
-  const { user, profile, loading, supabase, signOut } = useAuth();
+  const { user, profile, loading, supabase, signOut, isStaff } = useAuth();
   const [phone, setPhone] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -35,11 +35,16 @@ export default function CompleteProfilePage() {
   }, [loading, user, router]);
 
   // If the profile is already complete, leave — they don't belong here.
+  // Admins/staff bypass this gate even with an empty phone: they were
+  // typically provisioned manually and should land on /admin.
   useEffect(() => {
-    if (!loading && user && profile?.phone) {
+    if (loading || !user || !profile) return;
+    if (isStaff) {
+      router.replace(nextPath ?? "/admin");
+    } else if (profile.phone) {
       router.replace(nextPath ?? "/produk");
     }
-  }, [loading, user, profile, nextPath, router]);
+  }, [loading, user, profile, isStaff, nextPath, router]);
 
   const displayName =
     profile?.full_name ||

@@ -55,11 +55,17 @@ export async function GET(request: NextRequest) {
     profilePhone = (profile as { phone?: string | null } | null)?.phone;
   }
 
+  const isAdmin = role === "super_admin" || role === "staff";
+
   // Google OAuth signups don't carry a phone number, and the register
-  // form requires one. Funnel anyone whose profile is missing a phone
-  // through /complete-profile so they finish setup before we drop them
-  // into the regular destination.
-  if (user && !profilePhone) {
+  // form requires one. Funnel regular users whose profile is missing a
+  // phone through /complete-profile so they finish setup before we
+  // drop them into the regular destination. Skip admins/staff — they
+  // were typically provisioned manually (e.g., in Supabase Studio) and
+  // may legitimately have a null phone; we shouldn't block their
+  // access to the admin dashboard with a signup form. Also skip when
+  // role is undefined (profile fetch failed) to avoid a false gate.
+  if (user && role === "user" && !profilePhone) {
     const nextParam = next ? `?next=${encodeURIComponent(next)}` : "";
     const finalResponse = NextResponse.redirect(
       new URL(`/complete-profile${nextParam}`, origin),
@@ -70,7 +76,6 @@ export async function GET(request: NextRequest) {
     return finalResponse;
   }
 
-  const isAdmin = role === "super_admin" || role === "staff";
   const safeNext =
     next && next.startsWith("/admin") && !isAdmin ? null : next;
   const destination = safeNext ?? (isAdmin ? "/admin" : "/produk");
